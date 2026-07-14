@@ -9,7 +9,11 @@ services:
     image: mysql:8.0
     container_name: natillera_mysql
     restart: unless-stopped
-    command: --default-authentication-plugin=mysql_native_password
+    # log-bin-trust-function-creators: permite crear los triggers de la migración
+    # 001 sin el privilegio global SUPER (evita el ERROR 1419 con binlog activo).
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --log-bin-trust-function-creators=1
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
