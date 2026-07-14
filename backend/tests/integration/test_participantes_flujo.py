@@ -58,10 +58,24 @@ def test_cambiar_estado(client: TestClient, session: Session) -> None:
     assert r.json()["estado"] == "SUSPENDIDO"
 
 
-def test_supervisor_no_puede_inscribir(client: TestClient, session: Session) -> None:
+def test_supervisor_puede_inscribir(client: TestClient, session: Session) -> None:
+    # El supervisor gestiona el día a día: inscribir participantes (RF-201).
     usuario = crear_usuario(session)
     nat = crear_natillera(session)
     crear_membresia(session, usuario.id, nat.id, rol="SUPERVISOR")
+    session.commit()
+    r = client.post(
+        f"/api/v1/natilleras/{nat.uuid}/participantes",
+        json=_PART,
+        headers=bearer(usuario.uuid),
+    )
+    assert r.status_code == 201, r.text
+
+
+def test_cliente_no_puede_inscribir(client: TestClient, session: Session) -> None:
+    usuario = crear_usuario(session)
+    nat = crear_natillera(session)
+    crear_membresia(session, usuario.id, nat.id, rol="CLIENTE")
     session.commit()
     r = client.post(
         f"/api/v1/natilleras/{nat.uuid}/participantes",

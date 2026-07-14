@@ -47,7 +47,7 @@ _MIEMBRO = require_rol(Rol.ADMINISTRADOR, Rol.SUPERVISOR, Rol.CLIENTE)
 def inscribir(
     natillera_uuid: str,
     datos: InscribirParticipanteRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> ParticipanteResponse:
