@@ -6,7 +6,7 @@ import { usePagarLote, useParticipantes, usePeriodos } from '@/hooks/data'
 import { useNatillera } from '@/hooks/natilleras'
 import { mensajeError } from '@/lib/api'
 import { formatoCOP, nombrePeriodo } from '@/lib/formato'
-import type { ResumenLote } from '@/types'
+import type { Participante, ResumenLote } from '@/types'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardTitulo } from '@/components/ui/Card'
@@ -24,16 +24,25 @@ export function PagosLote() {
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set())
   const [resumen, setResumen] = useState<ResumenLote | null>(null)
 
-  // Valor de la cuota configurada (para mostrar; el cálculo autoritativo lo hace la API).
-  const cuota = natillera.data?.configuracion?.valor_cuota ?? null
+  // Cuota por defecto de la natillera; cada persona puede tener la suya.
+  const cuotaDefault = natillera.data?.configuracion?.valor_cuota ?? null
+  const cuotaDe = (p: Participante): string | null => p.valor_cuota ?? cuotaDefault
   const periodoNombre = periodos.data?.find((p) => p.uuid === periodoUuid)
-  const totalEstimado =
-    cuota && seleccion.size > 0 ? String(Number(cuota) * seleccion.size) : null
 
   const activos = useMemo(
     () => (participantes.data ?? []).filter((p) => p.estado === 'ACTIVO'),
     [participantes.data],
   )
+
+  // Total estimado = suma de las cuotas de los seleccionados (cada quien la suya).
+  const totalEstimado =
+    seleccion.size > 0
+      ? String(
+          activos
+            .filter((p) => seleccion.has(p.uuid))
+            .reduce((acc, p) => acc + Number(cuotaDe(p) ?? 0), 0),
+        )
+      : null
 
   function alternar(uuid: string) {
     setSeleccion((prev) => {
@@ -91,22 +100,22 @@ export function PagosLote() {
               ))}
             </SelectField>
           </div>
-          {cuota && (
+          {cuotaDefault && (
             <div className="flex items-center gap-2 rounded-nm-sm bg-surface px-4 py-2.5 shadow-nm-in">
               <PiggyBank size={18} className="text-accent" />
               <div className="text-right">
                 <p className="text-[11px] uppercase tracking-[0.06em] text-text-secondary">
-                  Cuota por persona
+                  Cuota por defecto
                 </p>
-                <p className="tabular font-bold text-accent">{formatoCOP(cuota)}</p>
+                <p className="tabular font-bold text-accent">{formatoCOP(cuotaDefault)}</p>
               </div>
             </div>
           )}
         </div>
         {periodoNombre && (
           <p className="mt-2 text-xs text-text-secondary">
-            Cobrando la cuota de <strong>{nombrePeriodo(periodoNombre.anio, periodoNombre.mes)}</strong>
-            {cuota ? ` · ${formatoCOP(cuota)} c/u` : ''}.
+            Cobrando la cuota de <strong>{nombrePeriodo(periodoNombre.anio, periodoNombre.mes)}</strong>.
+            Cada persona paga <strong>su propia cuota</strong>.
           </p>
         )}
       </Card>
@@ -124,11 +133,16 @@ export function PagosLote() {
                     {p.tipo_documento} {p.numero_documento}
                   </p>
                 </div>
-                <Toggle
-                  activo={seleccion.has(p.uuid)}
-                  onChange={() => alternar(p.uuid)}
-                  etiqueta={`Marcar pago de ${p.nombre}`}
-                />
+                <div className="flex items-center gap-3">
+                  <span className="tabular text-sm font-semibold text-accent">
+                    {cuotaDe(p) ? formatoCOP(cuotaDe(p)!) : '—'}
+                  </span>
+                  <Toggle
+                    activo={seleccion.has(p.uuid)}
+                    onChange={() => alternar(p.uuid)}
+                    etiqueta={`Marcar pago de ${p.nombre}`}
+                  />
+                </div>
               </li>
             ))}
           </ul>

@@ -11,6 +11,7 @@ from datetime import date
 from enum import Enum
 
 from app.shared.domain.base import RaizDeAgregado
+from app.shared.domain.dinero import Dinero
 from app.shared.domain.documento import Documento
 from app.shared.domain.excepciones import ErrorDeValidacionDeDominio, TransicionInvalida
 
@@ -42,6 +43,7 @@ class Participante(RaizDeAgregado):
         estado: EstadoParticipante = EstadoParticipante.ACTIVO,
         telefono: str | None = None,
         direccion: str | None = None,
+        valor_cuota: Dinero | None = None,
         id: int | None = None,
         uuid: str | None = None,
     ) -> None:
@@ -54,6 +56,7 @@ class Participante(RaizDeAgregado):
         self._estado = estado
         self._telefono = telefono
         self._direccion = direccion
+        self._valor_cuota = valor_cuota
         self.uuid = uuid
 
     @classmethod
@@ -64,8 +67,18 @@ class Participante(RaizDeAgregado):
         fecha_ingreso: date,
         telefono: str | None = None,
         direccion: str | None = None,
+        valor_cuota: Dinero | None = None,
     ) -> Participante:
-        return cls(nombre, documento, fecha_ingreso, telefono=telefono, direccion=direccion)
+        if valor_cuota is not None and not valor_cuota.es_positivo():
+            raise ErrorDeValidacionDeDominio("La cuota del participante debe ser positiva.")
+        return cls(
+            nombre,
+            documento,
+            fecha_ingreso,
+            telefono=telefono,
+            direccion=direccion,
+            valor_cuota=valor_cuota,
+        )
 
     @property
     def nombre(self) -> str:
@@ -90,6 +103,17 @@ class Participante(RaizDeAgregado):
     @property
     def direccion(self) -> str | None:
         return self._direccion
+
+    @property
+    def valor_cuota(self) -> Dinero | None:
+        """Cuota mensual propia. Si es None, se usa el valor por defecto de la
+        configuración de la natillera (RF-301)."""
+        return self._valor_cuota
+
+    def fijar_cuota(self, valor: Dinero) -> None:
+        if not valor.es_positivo():
+            raise ErrorDeValidacionDeDominio("La cuota del participante debe ser positiva.")
+        self._valor_cuota = valor
 
     def cambiar_estado(self, hacia: EstadoParticipante) -> None:
         if hacia not in _TRANSICIONES.get(self._estado, frozenset()):

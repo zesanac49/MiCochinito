@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from datetime import date
+from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, Date, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, Date, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.shared.infrastructure.db import ModeloTenant
@@ -30,3 +31,5 @@ class ParticipanteModel(ModeloTenant):
     direccion: Mapped[str | None] = mapped_column(String(200), nullable=True)
     estado: Mapped[str] = mapped_column(String(30), nullable=False, default="ACTIVO")
     fecha_ingreso: Mapped[date] = mapped_column(Date, nullable=False)
+    # Cuota mensual propia (RF-301). NULL => se usa el default de la configuración.
+    valor_cuota: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)

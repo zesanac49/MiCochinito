@@ -14,6 +14,7 @@ from app.modules.natilleras.infrastructure.repositorios import (
 from app.modules.participantes.application.casos_uso import (
     CambiarEstadoParticipante,
     EditarContacto,
+    FijarCuota,
     InscribirParticipante,
 )
 from app.modules.participantes.infrastructure.repositorios import (
@@ -57,6 +58,15 @@ def editar_contacto_uc(
     session: Session, bus: BusDeEventos, natillera_id: int
 ) -> EditarContacto:
     return EditarContacto(
+        UnidadDeTrabajoSQLAlchemy(session, bus),
+        RepositorioParticipantesSQLAlchemy(session, natillera_id),
+    )
+
+
+def fijar_cuota_uc(
+    session: Session, bus: BusDeEventos, natillera_id: int
+) -> FijarCuota:
+    return FijarCuota(
         UnidadDeTrabajoSQLAlchemy(session, bus),
         RepositorioParticipantesSQLAlchemy(session, natillera_id),
     )

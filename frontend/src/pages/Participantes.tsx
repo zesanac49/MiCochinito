@@ -1,10 +1,12 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Ayuda } from '@/components/ui/Ayuda'
 import { UserPlus } from 'lucide-react'
 import { useAuth } from '@/store/auth'
 import { type NuevoParticipante, useCrearParticipante, useParticipantes } from '@/hooks/data'
+import { useNatillera } from '@/hooks/natilleras'
 import { mensajeError } from '@/lib/api'
+import { formatoCOP } from '@/lib/formato'
 import type { TipoDocumento } from '@/types'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -18,6 +20,7 @@ const VACIO: NuevoParticipante = {
   numero_documento: '',
   fecha_ingreso: new Date().toISOString().slice(0, 10),
   telefono: '',
+  valor_cuota: '',
 }
 
 const TONO_ESTADO = {
@@ -28,14 +31,27 @@ const TONO_ESTADO = {
 
 export function Participantes() {
   const nat = useAuth((s) => s.natilleraUuid)
+  const natillera = useNatillera(nat)
+  const cuotaDefault = natillera.data?.configuracion?.valor_cuota ?? ''
   const lista = useParticipantes(nat)
   const crear = useCrearParticipante(nat ?? '')
   const [form, setForm] = useState<NuevoParticipante>(VACIO)
 
+  // Prellena la cuota con el valor por defecto de la natillera (editable).
+  useEffect(() => {
+    if (cuotaDefault) {
+      setForm((f) => (f.valor_cuota ? f : { ...f, valor_cuota: cuotaDefault }))
+    }
+  }, [cuotaDefault])
+
   function onSubmit(e: FormEvent) {
     e.preventDefault()
     if (!nat) return
-    crear.mutate(form, { onSuccess: () => setForm(VACIO) })
+    const payload: NuevoParticipante = {
+      ...form,
+      valor_cuota: form.valor_cuota?.trim() ? form.valor_cuota.trim() : undefined,
+    }
+    crear.mutate(payload, { onSuccess: () => setForm({ ...VACIO, valor_cuota: cuotaDefault }) })
   }
 
   return (
@@ -89,6 +105,13 @@ export function Participantes() {
             value={form.telefono ?? ''}
             onChange={(e) => setForm({ ...form, telefono: e.target.value })}
           />
+          <Field
+            label="Valor de la cuota mensual"
+            inputMode="decimal"
+            value={form.valor_cuota ?? ''}
+            onChange={(e) => setForm({ ...form, valor_cuota: e.target.value })}
+            placeholder={cuotaDefault || 'Cuota de esta persona'}
+          />
           <div className="sm:col-span-2 flex items-center justify-between">
             {crear.isError ? (
               <p className="text-sm text-danger">{mensajeError(crear.error)}</p>
@@ -109,6 +132,7 @@ export function Participantes() {
             <tr>
               <Th>Nombre</Th>
               <Th>Documento</Th>
+              <Th right>Cuota</Th>
               <Th>Estado</Th>
             </tr>
           </thead>
@@ -122,6 +146,13 @@ export function Participantes() {
                 </Td>
                 <Td tabular>
                   {p.tipo_documento} {p.numero_documento}
+                </Td>
+                <Td right tabular>
+                  {p.valor_cuota ? (
+                    formatoCOP(p.valor_cuota)
+                  ) : (
+                    <span className="text-text-secondary">Por defecto</span>
+                  )}
                 </Td>
                 <Td>
                   <Badge tono={TONO_ESTADO[p.estado]}>{p.estado}</Badge>

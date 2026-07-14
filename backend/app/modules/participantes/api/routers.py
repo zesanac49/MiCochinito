@@ -17,6 +17,7 @@ from app.modules.contabilidad.infrastructure.repositorios import (
 from app.modules.participantes.api.deps import (
     cambiar_estado_uc,
     editar_contacto_uc,
+    fijar_cuota_uc,
     inscribir_uc,
     natillera_id_de,
     repo_de,
@@ -25,6 +26,7 @@ from app.modules.participantes.api.schemas import (
     CambiarEstadoRequest,
     CuentaResponse,
     EditarContactoRequest,
+    FijarCuotaRequest,
     InscribirParticipanteRequest,
     ParticipanteResponse,
     SaldosResponse,
@@ -57,6 +59,7 @@ def inscribir(
         datos.fecha_ingreso,
         datos.telefono,
         datos.direccion,
+        Dinero(datos.valor_cuota) if datos.valor_cuota else None,
     )
     return ParticipanteResponse.de_dominio(p)
 
@@ -98,6 +101,20 @@ def editar(
 ) -> ParticipanteResponse:
     uc = editar_contacto_uc(session, bus, natillera_id_de(principal))
     p = uc.ejecutar(participante_uuid, datos.telefono, datos.direccion)
+    return ParticipanteResponse.de_dominio(p)
+
+
+@router.put("/{participante_uuid}/cuota", response_model=ParticipanteResponse)
+def fijar_cuota(
+    natillera_uuid: str,
+    participante_uuid: str,
+    datos: FijarCuotaRequest,
+    principal: Principal = Depends(_ADMIN),
+    session: Session = Depends(obtener_session),
+    bus: BusDeEventos = Depends(obtener_bus),
+) -> ParticipanteResponse:
+    uc = fijar_cuota_uc(session, bus, natillera_id_de(principal))
+    p = uc.ejecutar(participante_uuid, Dinero(datos.valor_cuota))
     return ParticipanteResponse.de_dominio(p)
 
 

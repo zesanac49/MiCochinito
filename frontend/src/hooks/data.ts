@@ -23,6 +23,7 @@ export interface NuevoParticipante {
   numero_documento: string
   fecha_ingreso: string
   telefono?: string
+  valor_cuota?: string
 }
 
 export function useCrearParticipante(nat: string) {

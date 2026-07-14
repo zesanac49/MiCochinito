@@ -20,9 +20,15 @@ class InscribirParticipanteRequest(BaseModel):
     fecha_ingreso: date
     telefono: str | None = None
     direccion: str | None = None
+    # Cuota mensual propia (opcional). Si se omite, se usa el default de la config.
+    valor_cuota: str | None = None
 
     def documento(self) -> Documento:
         return Documento(self.tipo_documento, self.numero_documento)
+
+
+class FijarCuotaRequest(BaseModel):
+    valor_cuota: str = Field(min_length=1)
 
 
 class EditarContactoRequest(BaseModel):
@@ -49,6 +55,7 @@ class ParticipanteResponse(BaseModel):
     fecha_ingreso: date
     telefono: str | None = None
     direccion: str | None = None
+    valor_cuota: str | None = None
 
     @classmethod
     def de_dominio(cls, p: Participante) -> ParticipanteResponse:
@@ -62,6 +69,7 @@ class ParticipanteResponse(BaseModel):
             fecha_ingreso=p.fecha_ingreso,
             telefono=p.telefono,
             direccion=p.direccion,
+            valor_cuota=p.valor_cuota.como_str() if p.valor_cuota is not None else None,
         )
 
 

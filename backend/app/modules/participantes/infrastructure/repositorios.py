@@ -10,6 +10,7 @@ from app.modules.participantes.domain.participante import (
     Participante,
 )
 from app.modules.participantes.infrastructure.modelos import ParticipanteModel
+from app.shared.domain.dinero import Dinero
 from app.shared.domain.documento import Documento, TipoDocumento
 
 
@@ -21,6 +22,7 @@ def _a_dominio(m: ParticipanteModel) -> Participante:
         estado=EstadoParticipante(m.estado),
         telefono=m.telefono,
         direccion=m.direccion,
+        valor_cuota=Dinero(m.valor_cuota) if m.valor_cuota is not None else None,
         id=m.id,
         uuid=m.uuid,
     )
@@ -41,6 +43,11 @@ class RepositorioParticipantesSQLAlchemy:
             direccion=participante.direccion,
             estado=participante.estado.value,
             fecha_ingreso=participante.fecha_ingreso,
+            valor_cuota=(
+                participante.valor_cuota.monto
+                if participante.valor_cuota is not None
+                else None
+            ),
         )
         self._session.add(m)
         self._session.flush()
@@ -55,6 +62,11 @@ class RepositorioParticipantesSQLAlchemy:
         m.estado = participante.estado.value
         m.telefono = participante.telefono
         m.direccion = participante.direccion
+        m.valor_cuota = (
+            participante.valor_cuota.monto
+            if participante.valor_cuota is not None
+            else None
+        )
 
     def obtener_por_uuid(self, uuid: str) -> Participante | None:
         m = self._session.scalar(

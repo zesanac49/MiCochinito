@@ -8,6 +8,7 @@ import {
   useAporteExtraordinario,
   useCambiarEstadoParticipante,
   useCuenta,
+  useFijarCuota,
   usePagarCuota,
   useParticipante,
 } from '@/hooks/participante'
@@ -32,9 +33,11 @@ export function ParticipanteDetalle() {
   const cambiarEstado = useCambiarEstadoParticipante(nat, uuid)
   const aporte = useAporteExtraordinario(nat, uuid)
   const pagarCuota = usePagarCuota(nat, uuid)
+  const fijarCuota = useFijarCuota(nat, uuid)
 
   const [montoAporte, setMontoAporte] = useState('')
   const [periodoCuota, setPeriodoCuota] = useState('')
+  const [cuotaInput, setCuotaInput] = useState('')
 
   const p = participante.data
   const c = cuenta.data
@@ -68,6 +71,40 @@ export function ParticipanteDetalle() {
           <p className="tabular text-2xl font-bold">{formatoCOP(c?.saldos.multas_pendientes ?? '0')}</p>
         </Card>
       </div>
+
+      {/* Cuota mensual propia */}
+      <Card>
+        <CardTitulo>Cuota mensual de esta persona</CardTitulo>
+        <div className="flex items-end gap-2">
+          <Field
+            label="Valor de la cuota"
+            inputMode="decimal"
+            value={cuotaInput}
+            onChange={(e) => setCuotaInput(e.target.value)}
+            placeholder={p?.valor_cuota ?? 'Por defecto de la natillera'}
+          />
+          <Button
+            variante="primaria"
+            cargando={fijarCuota.isPending}
+            disabled={!cuotaInput.trim()}
+            onClick={() => fijarCuota.mutate(cuotaInput.trim(), { onSuccess: () => setCuotaInput('') })}
+          >
+            Guardar
+          </Button>
+        </div>
+        <p className="mt-2 text-xs text-text-secondary">
+          Actual:{' '}
+          <strong>
+            {p?.valor_cuota
+              ? formatoCOP(p.valor_cuota)
+              : 'usa el valor por defecto de la natillera'}
+          </strong>
+          . Con esta cuota se cobra el recaudo mensual de la persona.
+        </p>
+        {fijarCuota.isError && (
+          <p className="mt-2 text-sm text-danger">{mensajeError(fijarCuota.error)}</p>
+        )}
+      </Card>
 
       {/* Acciones de ahorro */}
       <div className="grid gap-4 lg:grid-cols-2">

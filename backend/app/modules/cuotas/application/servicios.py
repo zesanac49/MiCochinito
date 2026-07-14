@@ -24,6 +24,7 @@ from app.modules.cuotas.application.puertos import RepositorioCuotas
 from app.modules.cuotas.domain.excepciones import PeriodoYaPagado
 from app.modules.natilleras.application.consultas import ConsultaNatillera
 from app.modules.participantes.application.puertos import RepositorioParticipantes
+from app.modules.participantes.domain.participante import Participante
 from app.shared.application.unidad_de_trabajo import UnidadDeTrabajo
 from app.shared.domain.dinero import Dinero
 from app.shared.domain.referencia import ReferenciaOrigen, TipoOrigen
@@ -46,11 +47,11 @@ class ServicioCuotas:
         self._cuotas = repo_cuotas
         self._contabilidad = contabilidad
 
-    def _resolver_participante_id(self, participante_uuid: str) -> int:
+    def _participante(self, participante_uuid: str) -> Participante:
         p = self._participantes.obtener_por_uuid(participante_uuid)
         if p is None or p.id is None:
             raise NoEncontrado("Participante inexistente.")
-        return p.id
+        return p
 
     def _registrar_cuota(
         self, participante_id: int, periodo_id: int, valor: Dinero, autor_id: int
@@ -75,16 +76,18 @@ class ServicioCuotas:
     ) -> AsientoLeido:
         with self._uow:
             datos = self._consulta.preparar_movimiento(natillera_uuid)
-            participante_id = self._resolver_participante_id(participante_uuid)
+            participante = self._participante(participante_uuid)
+            assert participante.id is not None
             periodo_id = self._periodos.obtener_id_por_uuid(periodo_uuid)
             if periodo_id is None:
                 raise NoEncontrado("Período inexistente.")
-            if self._cuotas.existe_pagada(participante_id, periodo_id):
+            if self._cuotas.existe_pagada(participante.id, periodo_id):
                 raise PeriodoYaPagado(
                     "El período ya está pagado para este participante."
                 )
+            valor = participante.valor_cuota or datos.valor_cuota
             leido = self._registrar_cuota(
-                participante_id, periodo_id, datos.valor_cuota, autor_id
+                participante.id, periodo_id, valor, autor_id
             )
             self._uow.commit()
         return leido
@@ -98,17 +101,18 @@ class ServicioCuotas:
                 raise FuncionalidadNoDisponible(
                     "Los aportes extraordinarios no están habilitados en esta natillera."
                 )
-            participante_id = self._resolver_participante_id(participante_uuid)
+            participante = self._participante(participante_uuid)
+            assert participante.id is not None
             asiento = Asiento(
                 monto=monto,
                 naturaleza=Naturaleza.CREDITO,
                 concepto=ConceptoContable.APORTE_EXTRAORDINARIO,
                 fondo=TipoFondo.AHORRO,
                 referencia=ReferenciaOrigen(
-                    TipoOrigen.APORTE_EXTRAORDINARIO, participante_id
+                    TipoOrigen.APORTE_EXTRAORDINARIO, participante.id
                 ),
                 descripcion="Aporte extraordinario",
-                participante_id=participante_id,
+                participante_id=participante.id,
             )
             leido = self._contabilidad.registrar_asiento(asiento, autor_id)
             self._uow.commit()
@@ -137,10 +141,9 @@ class ServicioCuotas:
                         ItemLoteResultado(participante_uuid, periodo_uuid, "YA_PAGADO")
                     )
                     continue
-                leido = self._registrar_cuota(
-                    p.id, periodo_id, datos.valor_cuota, autor_id
-                )
-                total = total + datos.valor_cuota
+                valor = p.valor_cuota or datos.valor_cuota
+                leido = self._registrar_cuota(p.id, periodo_id, valor, autor_id)
+                total = total + valor
                 resultados.append(
                     ItemLoteResultado(
                         participante_uuid, periodo_uuid, "PAGADO", leido.uuid

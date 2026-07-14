@@ -13,6 +13,7 @@ from app.modules.participantes.domain.participante import (
     Participante,
 )
 from app.shared.application.unidad_de_trabajo import UnidadDeTrabajo
+from app.shared.domain.dinero import Dinero
 from app.shared.domain.documento import Documento
 
 
@@ -35,6 +36,7 @@ class InscribirParticipante:
         fecha_ingreso: date,
         telefono: str | None = None,
         direccion: str | None = None,
+        valor_cuota: Dinero | None = None,
     ) -> Participante:
         with self._uow:
             self._consulta.exigir_operacion(natillera_uuid, "REGISTRAR_PARTICIPANTE")
@@ -44,7 +46,7 @@ class InscribirParticipante:
                     {"tipo": documento.tipo.value, "numero": documento.numero},
                 )
             participante = Participante.inscribir(
-                nombre, documento, fecha_ingreso, telefono, direccion
+                nombre, documento, fecha_ingreso, telefono, direccion, valor_cuota
             )
             self._repo.agregar(participante)
             self._uow.commit()
@@ -80,6 +82,24 @@ class EditarContacto:
             if participante is None:
                 raise NoEncontrado("Participante inexistente.")
             participante.editar_contacto(telefono, direccion)
+            self._repo.guardar(participante)
+            self._uow.commit()
+        return participante
+
+
+class FijarCuota:
+    """Fija/cambia la cuota mensual propia de un participante (RF-301)."""
+
+    def __init__(self, uow: UnidadDeTrabajo, repo: RepositorioParticipantes) -> None:
+        self._uow = uow
+        self._repo = repo
+
+    def ejecutar(self, participante_uuid: str, valor: Dinero) -> Participante:
+        with self._uow:
+            participante = self._repo.obtener_por_uuid(participante_uuid)
+            if participante is None:
+                raise NoEncontrado("Participante inexistente.")
+            participante.fijar_cuota(valor)
             self._repo.guardar(participante)
             self._uow.commit()
         return participante

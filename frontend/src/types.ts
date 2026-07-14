@@ -60,6 +60,8 @@ export interface Participante {
   fecha_ingreso: string
   telefono?: string | null
   direccion?: string | null
+  // Cuota mensual propia. Si es null, se usa el valor por defecto de la config.
+  valor_cuota?: string | null
 }
 
 export interface Periodo {

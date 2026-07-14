@@ -40,6 +40,22 @@ export function useCambiarEstadoParticipante(nat: string, uuid: string) {
   })
 }
 
+export function useFijarCuota(nat: string, uuid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (valor_cuota: string) =>
+      (
+        await api.put<Participante>(`/natilleras/${nat}/participantes/${uuid}/cuota`, {
+          valor_cuota,
+        })
+      ).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['participante', nat, uuid] })
+      qc.invalidateQueries({ queryKey: ['participantes', nat] })
+    },
+  })
+}
+
 export function useAporteExtraordinario(nat: string, uuid: string) {
   const qc = useQueryClient()
   return useMutation({
