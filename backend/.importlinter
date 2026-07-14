@@ -1,0 +1,63 @@
+; Reglas de dependencia entre capas (doc 05 §2, TEC-03).
+; Ejecutar con:  lint-imports  (desde backend/)
+
+[importlinter]
+root_package = app
+include_external_packages = True
+
+; ---------------------------------------------------------------------------
+; Contrato 1 — Capas por módulo.
+; Orden de arriba (más externo) hacia abajo (más interno). Una capa solo puede
+; importar las que están por debajo suyo:
+;   api            -> puede importar todo (composición)
+;   infrastructure -> conoce application y domain (implementa puertos)
+;   application    -> conoce SOLO domain (define puertos; NO ve infrastructure)
+;   domain         -> no importa a nadie (Python puro)
+; Colocar infrastructure ENCIMA de application es lo que hace cumplir que
+; application nunca dependa de la infraestructura (regla dura de Clean Arch).
+; ---------------------------------------------------------------------------
+[importlinter:contract:capas-por-modulo]
+name = Capas por módulo (api > infrastructure > application > domain)
+type = layers
+; (api) es opcional: app.shared no expone capa api. import-linter la omite
+; en los contenedores donde no existe y la exige donde sí.
+layers =
+    (api)
+    infrastructure
+    application
+    domain
+containers =
+    app.shared
+    app.modules.natilleras
+    app.modules.participantes
+    app.modules.contabilidad
+    app.modules.cuotas
+    app.modules.prestamos
+    app.modules.actividades
+    app.modules.multas
+    app.modules.liquidacion
+
+; ---------------------------------------------------------------------------
+; Contrato 2 — Pureza del dominio (TEC-03).
+; El dominio jamás importa frameworks de infraestructura.
+; ---------------------------------------------------------------------------
+[importlinter:contract:dominio-puro]
+name = El dominio no importa frameworks (TEC-03)
+type = forbidden
+source_modules =
+    app.shared.domain
+    app.modules.natilleras.domain
+    app.modules.participantes.domain
+    app.modules.contabilidad.domain
+    app.modules.cuotas.domain
+    app.modules.prestamos.domain
+    app.modules.actividades.domain
+    app.modules.multas.domain
+    app.modules.liquidacion.domain
+forbidden_modules =
+    fastapi
+    sqlalchemy
+    pydantic
+    alembic
+    passlib
+    jwt

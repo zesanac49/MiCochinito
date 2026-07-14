@@ -1,0 +1,23 @@
+# Python
+**/.venv/
+**/__pycache__/
+*.pyc
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+*.db
+.coverage
+htmlcov/
+
+# Secretos (doc 08 §5): jamás commitear
+.env
+
+# Node / frontend
+**/node_modules/
+**/dist/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

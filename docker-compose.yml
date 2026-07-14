@@ -1,0 +1,53 @@
+# ============================================================
+#  Natillera — Docker Compose
+#  Dos servicios: mysql (aislado) + app (React + FastAPI tras nginx).
+#  Acceso en la red local por  http://IP_DEL_SERVIDOR:${APP_PORT}
+# ============================================================
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: natillera_mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - natillera-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # Sin bloque 'ports': la BD solo es visible dentro de la red de compose.
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: natillera_app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Fuente única: la URL de BD se compone de las credenciales MySQL.
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      # Puerto del host propio de Natillera (la tienda usa 8080).
+      - "${APP_PORT:-8090}:8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  natillera-mysql-data:

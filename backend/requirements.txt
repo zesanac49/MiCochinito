@@ -1,0 +1,16 @@
+# Stack congelado (CLAUDE.md §3). Producción.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy==2.0.36
+alembic==1.14.0
+pydantic==2.10.4
+pydantic-settings==2.7.1
+pymysql==1.1.1
+pyjwt==2.10.1
+passlib[bcrypt]==1.7.4
+# bcrypt fijado a 4.0.1: passlib 1.7.4 es incompatible con bcrypt >= 4.1
+# (elimina __about__ y endurece el límite de 72 bytes). No es dependencia nueva,
+# es el backend de passlib[bcrypt] del stack (CLAUDE.md §3).
+bcrypt==4.0.1
+structlog==24.4.0
+python-multipart==0.0.20

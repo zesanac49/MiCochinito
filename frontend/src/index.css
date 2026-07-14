@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: normal;
+  }
+  body {
+    @apply bg-surface text-text-primary antialiased;
+    min-height: 100vh;
+  }
+  /* Dinero como texto tabular (DIS-09). */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Foco visible siempre (DIS-04). */
+  :focus-visible {
+    outline: 2px solid #047857;
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+    }
+  }
+}

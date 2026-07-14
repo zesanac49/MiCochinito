@@ -1,0 +1,60 @@
+[project]
+name = "natillera-backend"
+version = "0.1.0"
+description = "Plataforma de Administración de Natilleras — backend"
+requires-python = ">=3.11"
+
+# NOTA (desviación de stack): CLAUDE.md §3 congela Python 3.12. El entorno de
+# desarrollo actual solo tiene 3.11.9, por lo que se fija requires-python >=3.11
+# y se evita sintaxis exclusiva de 3.12 (PEP 695). Actualizar a 3.12 cuando el
+# entorno lo permita.
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["app", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "SIM"]
+# El grep anti-float (doc 08 §3) es una guarda de CI aparte; ruff cubre el estilo.
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.ruff.lint.flake8-bugbear]
+# Patrón idiomático de FastAPI: dependencias como valores por defecto.
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Header",
+    "fastapi.Body",
+    "app.core.auth.require_rol",
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+# strict aplica a todo el paquete; domain/ y application/ son la zona crítica
+# (doc 08 §4). Se relajan solo módulos de infraestructura de terceros si hiciera
+# falta vía overrides explícitos.
+
+[[tool.mypy.overrides]]
+module = ["passlib.*", "jose.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra -q"
+markers = [
+    "mysql: prueba de integración que exige MySQL real en Docker (TEC-07); se omite sin Docker.",
+    "integration: prueba de integración financiera.",
+    "property: prueba de propiedad (hypothesis).",
+]
+
+[tool.coverage.run]
+source = ["app"]
+branch = true

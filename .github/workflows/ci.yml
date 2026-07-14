@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  calidad-y-tests-rapidos:
+    name: Calidad + tests SQLite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"  # stack congelado (CLAUDE.md §3)
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+      - name: Ruff (estilo)
+        run: ruff check app tests
+      - name: Mypy (tipos estrictos en app)
+        run: mypy app
+      - name: Import-linter (reglas de capas, TEC-03)
+        run: lint-imports
+      - name: Guarda anti-float (TEC-01)
+        run: python scripts/guard_anti_float.py
+      - name: Tests rápidos (SQLite, sin marca mysql)
+        env:
+          ENTORNO: test
+        run: pytest -m "not mysql" -q
+
+  tests-financieros-mysql:
+    name: Integración financiera (MySQL real, TEC-07)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_DATABASE: natillera_test
+          MYSQL_ROOT_PASSWORD: rootpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -prootpass"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+      - name: Tests financieros contra MySQL
+        env:
+          ENTORNO: test
+          DATABASE_URL: mysql+pymysql://root:rootpass@127.0.0.1:3306/natillera_test
+        run: pytest -m mysql -q

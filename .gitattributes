@@ -1,0 +1,11 @@
+# Normaliza fin de línea. Los scripts de shell y el entrypoint DEBEN ser LF:
+# un CRLF de Windows rompe bash dentro del contenedor Linux.
+* text=auto eol=lf
+*.sh text eol=lf
+docker/entrypoint.sh text eol=lf
+
+# Binarios: sin conversión.
+*.png binary
+*.ico binary
+*.woff binary
+*.woff2 binary

@@ -1,0 +1,42 @@
+"""Composición del servicio de actividades (doc 05 §2)."""
+
+from __future__ import annotations
+
+from sqlalchemy.orm import Session
+
+from app.core.eventbus import BusDeEventos
+from app.modules.actividades.application.servicios import ServicioActividades
+from app.modules.actividades.infrastructure.repositorios import (
+    RepositorioActividadesSQLAlchemy,
+)
+from app.modules.contabilidad.infrastructure.repositorios import (
+    FabricaContabilidadSQLAlchemy,
+    RepositorioPeriodosSQLAlchemy,
+)
+from app.modules.natilleras.application.consultas import ConsultaNatillera
+from app.modules.natilleras.infrastructure.repositorios import (
+    RepositorioNatillerasSQLAlchemy,
+)
+from app.modules.participantes.infrastructure.repositorios import (
+    RepositorioParticipantesSQLAlchemy,
+)
+from app.shared.infrastructure.unidad_de_trabajo_sqlalchemy import (
+    UnidadDeTrabajoSQLAlchemy,
+)
+
+
+def servicio_actividades(
+    session: Session, bus: BusDeEventos, natillera_id: int
+) -> ServicioActividades:
+    return ServicioActividades(
+        UnidadDeTrabajoSQLAlchemy(session, bus),
+        ConsultaNatillera(RepositorioNatillerasSQLAlchemy(session)),
+        RepositorioActividadesSQLAlchemy(session, natillera_id),
+        RepositorioPeriodosSQLAlchemy(session, natillera_id),
+        RepositorioParticipantesSQLAlchemy(session, natillera_id),
+        FabricaContabilidadSQLAlchemy(session).para(natillera_id),
+    )
+
+
+def repo_actividades(session: Session, natillera_id: int) -> RepositorioActividadesSQLAlchemy:
+    return RepositorioActividadesSQLAlchemy(session, natillera_id)
