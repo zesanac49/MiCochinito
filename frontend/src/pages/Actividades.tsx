@@ -33,7 +33,6 @@ export function Actividades() {
     periodo_uuid: '',
     valor_numero: '',
     cantidad_numeros: 20,
-    premio: '',
   })
 
   function onCrear(e: FormEvent) {
@@ -43,7 +42,7 @@ export function Actividades() {
         ? form
         : { tipo: form.tipo, nombre: form.nombre, periodo_uuid: form.periodo_uuid }
     crear.mutate(payload, {
-      onSuccess: () => setForm({ ...form, nombre: '', valor_numero: '', premio: '' }),
+      onSuccess: () => setForm({ ...form, nombre: '', valor_numero: '' }),
     })
   }
 
@@ -103,12 +102,10 @@ export function Actividades() {
                 value={form.cantidad_numeros ?? 20}
                 onChange={(e) => setForm({ ...form, cantidad_numeros: Number(e.target.value) })}
               />
-              <Field
-                label="Premio"
-                inputMode="decimal"
-                value={form.premio ?? ''}
-                onChange={(e) => setForm({ ...form, premio: e.target.value })}
-              />
+              <p className="text-xs text-text-secondary sm:col-span-2">
+                El <strong>premio</strong> no se digita: es el pozo, que se calcula solo
+                (valor por número × números pagados). El ganador se lleva el pozo.
+              </p>
             </>
           )}
           <div className="sm:col-span-2 flex items-center justify-between">

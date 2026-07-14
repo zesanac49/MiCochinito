@@ -24,7 +24,6 @@ def _polla(cantidad: int = 5) -> Actividad:
         periodo_id=1,
         valor_numero=Dinero("10000"),
         cantidad_numeros=cantidad,
-        premio=Dinero("30000"),
     )
     a.abrir()
     return a
@@ -58,15 +57,21 @@ def test_inv07_numero_no_pagado_nunca_gana() -> None:
     assert sorteo.participante_ganador_id is None
 
 
-def test_sorteo_con_ganador_agrega_premio() -> None:
+def test_sorteo_ganador_premio_es_el_pozo() -> None:
     a = _polla()
-    a.asignar_numero(4, 40)
-    a.marcar_pago_numero(4)  # ingreso 10.000
-    sorteo = a.sortear(4, fuente="Lotería")
+    for numero, pid in [(1, 10), (2, 20), (3, 30)]:
+        a.asignar_numero(numero, pid)
+        a.marcar_pago_numero(numero)  # 3 pagados => pozo = 30.000
+    sorteo = a.sortear(2, fuente="Lotería")
     assert sorteo.hubo_ganador is True
-    assert sorteo.participante_ganador_id == 40
-    # Utilidad = 10.000 ingreso - 30.000 premio = -20.000
-    assert a.utilidad() == Dinero("-20000.00")
+    assert sorteo.participante_ganador_id == 20
+    # El premio es todo el pozo (valor_numero × pagados).
+    assert a.premio_calculado() == Dinero("30000.00")
+    premios = [m for m in a.movimientos if m.tipo is TipoMovimiento.PREMIO]
+    assert len(premios) == 1
+    assert premios[0].valor == Dinero("30000.00")
+    # El ganador se lleva el pozo: el fondo no gana en esta polla (utilidad 0).
+    assert a.utilidad() == Dinero("0.00")
 
 
 def test_inv09_sin_ganador_no_hay_premio() -> None:

@@ -49,7 +49,6 @@ def crear(
         datos.periodo_uuid,
         _dinero(datos.valor_numero),
         datos.cantidad_numeros,
-        _dinero(datos.premio),
         datos.fecha_sorteo,
     )
     return ActividadResponse.de_dominio(a)

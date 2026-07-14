@@ -183,7 +183,7 @@ export interface Actividad {
   estado: EstadoActividad
   valor_numero: string | null
   cantidad_numeros: number | null
-  premio: string | null
+  premio: string // pozo actual = valor por número × números pagados (calculado)
   fecha_sorteo: string | null
   utilidad: string
   numeros: NumeroActividad[]

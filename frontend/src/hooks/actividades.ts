@@ -25,7 +25,6 @@ export interface NuevaActividad {
   periodo_uuid: string
   valor_numero?: string
   cantidad_numeros?: number
-  premio?: string
 }
 
 export function useCrearActividad(nat: string) {

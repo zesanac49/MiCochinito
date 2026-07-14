@@ -103,10 +103,13 @@ export const AYUDA = {
     titulo: 'Actividades',
     intro: 'Pollas, rifas y eventos cuya utilidad va al Fondo de Rentabilidad.',
     pasos: [
-      'Crea la actividad (tipo Polla: valor por número, cantidad y premio).',
+      'Crea la actividad (tipo Polla: valor por número y cantidad).',
       'Abre su detalle para asignar números y gestionarla.',
     ],
-    errores: ['La utilidad = ingresos − premio − gastos, y pasa a rentabilidad al cerrar.'],
+    errores: [
+      'El premio NO se digita: es el pozo (valor por número × números pagados) y se lo lleva el ganador.',
+      'El fondo solo gana cuando no hay ganador (número no pagado): ahí el pozo pasa a rentabilidad.',
+    ],
   },
   actividad_detalle: {
     titulo: 'Detalle de la actividad',

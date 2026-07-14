@@ -74,7 +74,6 @@ class ServicioActividades:
         periodo_uuid: str,
         valor_numero: Dinero | None,
         cantidad_numeros: int | None,
-        premio: Dinero | None,
         fecha_sorteo: date | None,
     ) -> Actividad:
         with self._uow:
@@ -85,7 +84,6 @@ class ServicioActividades:
                 self._periodo_id(periodo_uuid),
                 valor_numero=valor_numero,
                 cantidad_numeros=cantidad_numeros,
-                premio=premio,
                 fecha_sorteo=fecha_sorteo,
             )
             self._actividades.agregar(actividad)

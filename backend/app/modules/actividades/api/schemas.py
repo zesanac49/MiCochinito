@@ -16,7 +16,6 @@ class CrearActividadRequest(BaseModel):
     periodo_uuid: str
     valor_numero: str | None = None
     cantidad_numeros: int | None = Field(default=None, ge=1, le=1000)
-    premio: str | None = None
     fecha_sorteo: date | None = None
 
 
@@ -74,7 +73,7 @@ class ActividadResponse(BaseModel):
     estado: str
     valor_numero: str | None
     cantidad_numeros: int | None
-    premio: str | None
+    premio: str  # pozo actual = valor_numero × números pagados (calculado)
     fecha_sorteo: date | None
     utilidad: str
     numeros: list[NumeroResponse]
@@ -92,7 +91,7 @@ class ActividadResponse(BaseModel):
             estado=a.estado.value,
             valor_numero=a.valor_numero.como_str() if a.valor_numero else None,
             cantidad_numeros=a.cantidad_numeros,
-            premio=a.premio.como_str() if a.premio else None,
+            premio=a.premio_calculado().como_str(),
             fecha_sorteo=a.fecha_sorteo,
             utilidad=a.utilidad().como_str(),
             numeros=[

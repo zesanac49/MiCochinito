@@ -45,9 +45,8 @@ def _setup(client: TestClient, session: Session) -> tuple[str, str, list[str], d
     return nat.uuid, periodo, parts, h
 
 
-def _crear_polla(
-    client: TestClient, base: str, h: dict[str, str], periodo: str, premio: str = "10000.00"
-) -> str:
+def _crear_polla(client: TestClient, base: str, h: dict[str, str], periodo: str) -> str:
+    # El premio ya no se digita: se calcula del pozo (valor_numero × pagados).
     return client.post(
         f"{base}/actividades",
         json={
@@ -56,7 +55,6 @@ def _crear_polla(
             "periodo_uuid": periodo,
             "valor_numero": "10000.00",
             "cantidad_numeros": 5,
-            "premio": premio,
         },
         headers=h,
     ).json()["uuid"]
@@ -76,32 +74,39 @@ def _asignar_abrir_pagar(
     client.post(f"{a}/numeros/pagos", json={"numeros": pagados}, headers=h)
 
 
-def test_polla_con_ganador_utilidad_a_rentabilidad(client: TestClient, session: Session) -> None:
+def test_polla_con_ganador_el_pozo_va_al_ganador(client: TestClient, session: Session) -> None:
     nat_uuid, periodo, parts, h = _setup(client, session)
     base = f"/api/v1/natilleras/{nat_uuid}"
-    act = _crear_polla(client, base, h, periodo, premio="10000.00")
+    act = _crear_polla(client, base, h, periodo)
     a = f"{base}/actividades/{act}"
     _asignar_abrir_pagar(client, a, h, parts, [1, 2, 3])  # 30.000 en ingresos
 
-    sorteo = client.post(
+    detalle = client.post(
         f"{a}/sorteo", json={"numero_ganador": 1, "fuente": "Lotería"}, headers=h
     ).json()
-    assert sorteo["sorteo"]["hubo_ganador"] is True
-    # Utilidad = 30.000 - 10.000 premio = 20.000 → crédito a Rentabilidad.
+    assert detalle["sorteo"]["hubo_ganador"] is True
+    # El premio es todo el pozo (30.000): el ganador se lo lleva y el fondo no gana.
+    assert detalle["premio"] == "30000.00"
     cerrada = client.post(f"{a}/cierre", headers=h).json()
     assert cerrada["estado"] == "CERRADA"
     fondos = {f["tipo"]: f["saldo"] for f in client.get(f"{base}/fondos", headers=h).json()}
-    assert fondos["RENTABILIDAD"] == "20000.00"
+    assert fondos["RENTABILIDAD"] == "0.00"
 
 
 def test_cierre_con_perdida_sin_saldo_bloqueado(client: TestClient, session: Session) -> None:
     nat_uuid, periodo, parts, h = _setup(client, session)
     base = f"/api/v1/natilleras/{nat_uuid}"
-    act = _crear_polla(client, base, h, periodo, premio="30000.00")
+    act = _crear_polla(client, base, h, periodo)
     a = f"{base}/actividades/{act}"
     _asignar_abrir_pagar(client, a, h, parts, [1])  # 10.000 en ingresos
+    # Un gasto hace que, con ganador (premio = pozo), la utilidad sea negativa.
+    client.post(
+        f"{a}/movimientos",
+        json={"tipo": "GASTO", "concepto": "Impresión", "valor": "5000"},
+        headers=h,
+    )
     client.post(f"{a}/sorteo", json={"numero_ganador": 1, "fuente": "Lotería"}, headers=h)
-    # Utilidad = 10.000 - 30.000 premio = -20.000; Rentabilidad sin saldo → bloquea.
+    # Utilidad = 10.000 ingreso − 10.000 premio − 5.000 gasto = −5.000; sin saldo → bloquea.
     r = client.post(f"{a}/cierre", headers=h)
     assert r.status_code == 409
     assert r.json()["error"]["codigo"] == "ACTIVIDAD_NO_CERRABLE"

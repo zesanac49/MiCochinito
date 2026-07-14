@@ -95,16 +95,15 @@ class Actividad(RaizDeAgregado):
         periodo_id: int,
         valor_numero: Dinero | None = None,
         cantidad_numeros: int | None = None,
-        premio: Dinero | None = None,
         fecha_sorteo: date | None = None,
     ) -> Actividad:
+        # El premio ya no se digita: se calcula del pozo al sortear (premio_calculado).
         return cls(
             tipo,
             nombre,
             periodo_id,
             valor_numero=valor_numero,
             cantidad_numeros=cantidad_numeros,
-            premio=premio,
             fecha_sorteo=fecha_sorteo,
         )
 
@@ -235,15 +234,20 @@ class Actividad(RaizDeAgregado):
             (n for n in self.numeros_activos() if n.numero == numero_ganador), None
         )
         hubo_ganador = ganador is not None
-        if hubo_ganador and self._premio is not None:
-            self._movimientos.append(
-                Movimiento(
-                    tipo=TipoMovimiento.PREMIO,
-                    concepto=f"Premio del sorteo (número {numero_ganador})",
-                    valor=self._premio,
-                    participante_id=ganador.participante_id if ganador else None,
+        if hubo_ganador and ganador is not None:
+            # El premio es todo el pozo: valor por número × números pagados
+            # (RF-503 ajustado). El ganador se lleva lo recaudado; el fondo solo
+            # gana cuando no hay ganador (INV-09).
+            premio = self.premio_calculado()
+            if premio.es_positivo():
+                self._movimientos.append(
+                    Movimiento(
+                        tipo=TipoMovimiento.PREMIO,
+                        concepto=f"Premio del sorteo (número {numero_ganador})",
+                        valor=premio,
+                        participante_id=ganador.participante_id,
+                    )
                 )
-            )
         self._sorteo = Sorteo(
             numero_ganador=numero_ganador,
             hubo_ganador=hubo_ganador,
@@ -253,7 +257,13 @@ class Actividad(RaizDeAgregado):
         self._transicionar(EstadoActividad.SORTEADA)
         return self._sorteo
 
-    # --- Utilidad y cierre --------------------------------------------------
+    # --- Premio y utilidad --------------------------------------------------
+    def premio_calculado(self) -> Dinero:
+        """Premio = todo lo recaudado por los números pagados (valor_numero ×
+        números pagados). Es lo que se lleva el ganador; se usa en el sorteo y
+        para mostrar el pozo actual antes del sorteo."""
+        return self._suma(TipoMovimiento.INGRESO)
+
     def utilidad(self) -> Dinero:
         ingresos = self._suma(TipoMovimiento.INGRESO)
         premios = self._suma(TipoMovimiento.PREMIO)

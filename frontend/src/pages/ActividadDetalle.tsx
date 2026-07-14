@@ -46,7 +46,11 @@ export function ActividadDetalle() {
 
       <Card>
         <div className="flex items-center justify-between">
-          <span className="text-text-secondary">Utilidad proyectada</span>
+          <span className="text-text-secondary">Premio (pozo) — se lo lleva el ganador</span>
+          <span className="tabular text-lg font-bold text-warning">{formatoCOP(a.premio)}</span>
+        </div>
+        <div className="mt-2 flex items-center justify-between border-t border-text-secondary/10 pt-2">
+          <span className="text-text-secondary">Utilidad proyectada (al fondo)</span>
           <span className="tabular text-2xl font-bold text-accent">{formatoCOP(a.utilidad)}</span>
         </div>
         {a.sorteo && (
