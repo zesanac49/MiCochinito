@@ -41,7 +41,7 @@ def listar_catalogo(
 def crear_catalogo(
     natillera_uuid: str,
     datos: CrearCatalogoRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> CatalogoResponse:
@@ -54,7 +54,7 @@ def crear_catalogo(
 def imponer(
     natillera_uuid: str,
     datos: ImponerMultaRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> MultaResponse:
@@ -99,7 +99,7 @@ def anular(
     natillera_uuid: str,
     multa_uuid: str,
     datos: AnularMultaRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> MultaResponse:

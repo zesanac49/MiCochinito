@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from tests.conftest import bearer, crear_membresia, crear_natillera, crear_usuario
+from tests.integration.test_cuotas_flujo import _CONFIG
 
 
 def test_sin_token_devuelve_401(client: TestClient, session: Session) -> None:
@@ -29,17 +30,17 @@ def test_token_valido_sin_membresia_es_prohibido(client: TestClient, session: Se
     assert resp.json()["error"]["codigo"] == "PROHIBIDO"
 
 
-def test_supervisor_no_puede_transicionar(client: TestClient, session: Session) -> None:
+def test_supervisor_puede_transicionar(client: TestClient, session: Session) -> None:
+    # El supervisor gestiona la natillera: configurar y avanzar estados (menos liquidar).
     usuario = crear_usuario(session)
     nat = crear_natillera(session)
     crear_membresia(session, usuario.id, nat.id, rol="SUPERVISOR")
     session.commit()
-    resp = client.post(
-        f"/api/v1/natilleras/{nat.uuid}/transiciones",
-        json={"a": "ABIERTA"},
-        headers=bearer(usuario.uuid),
-    )
-    assert resp.status_code == 403
+    h = bearer(usuario.uuid)
+    base = f"/api/v1/natilleras/{nat.uuid}"
+    assert client.put(f"{base}/configuracion", json=_CONFIG, headers=h).status_code == 200
+    resp = client.post(f"{base}/transiciones", json={"a": "ABIERTA"}, headers=h)
+    assert resp.status_code == 200
 
 
 def test_admin_miembro_puede_leer(client: TestClient, session: Session) -> None:

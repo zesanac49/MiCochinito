@@ -35,7 +35,7 @@ _ADMIN_SUP = require_rol(Rol.ADMINISTRADOR, Rol.SUPERVISOR)
 def solicitar(
     natillera_uuid: str,
     datos: SolicitarPrestamoRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> PrestamoResponse:
@@ -78,7 +78,7 @@ def aprobacion(
     natillera_uuid: str,
     prestamo_uuid: str,
     datos: AprobacionRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> PrestamoResponse:
@@ -91,7 +91,7 @@ def aprobacion(
 def desembolso(
     natillera_uuid: str,
     prestamo_uuid: str,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> PrestamoResponse:
@@ -138,7 +138,7 @@ def pagar(
 @router.post("/mora", response_model=dict)
 def detectar_mora(
     natillera_uuid: str,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> dict[str, int]:

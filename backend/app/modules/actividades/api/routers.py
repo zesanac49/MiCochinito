@@ -37,7 +37,7 @@ def _dinero(v: str | None) -> Dinero | None:
 def crear(
     natillera_uuid: str,
     datos: CrearActividadRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> ActividadResponse:
@@ -82,7 +82,7 @@ def obtener(
 def abrir(
     natillera_uuid: str,
     actividad_uuid: str,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> ActividadResponse:
@@ -95,7 +95,7 @@ def asignar_numeros(
     natillera_uuid: str,
     actividad_uuid: str,
     datos: AsignarNumerosRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> ActividadResponse:
@@ -126,7 +126,7 @@ def registrar_movimiento(
     natillera_uuid: str,
     actividad_uuid: str,
     datos: MovimientoRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> ActividadResponse:
@@ -143,7 +143,7 @@ def sortear(
     natillera_uuid: str,
     actividad_uuid: str,
     datos: SorteoRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> ActividadResponse:
@@ -157,7 +157,7 @@ def sortear(
 def cerrar(
     natillera_uuid: str,
     actividad_uuid: str,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> ActividadResponse:
@@ -172,7 +172,7 @@ def clonar(
     natillera_uuid: str,
     actividad_uuid: str,
     datos: ClonacionRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> ActividadResponse:

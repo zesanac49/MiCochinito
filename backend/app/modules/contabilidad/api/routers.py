@@ -121,7 +121,7 @@ def revertir_asiento(
 @router.post("/reconciliacion", response_model=ReconciliacionResponse)
 def reconciliar(
     natillera_uuid: str,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
 ) -> ReconciliacionResponse:
     nid = _natillera_id(principal)

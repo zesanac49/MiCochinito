@@ -75,7 +75,7 @@ def obtener(
 def transicionar(
     natillera_uuid: str,
     datos: TransicionRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     uc: TransicionarEstado = Depends(uc_transicionar),
 ) -> NatilleraResponse:
     autor_id = principal.usuario_id or 0
@@ -87,7 +87,7 @@ def transicionar(
 def configurar(
     natillera_uuid: str,
     datos: ConfiguracionRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     uc: ConfigurarNatillera = Depends(uc_configurar),
 ) -> NatilleraResponse:
     autor_id = principal.usuario_id or 0
