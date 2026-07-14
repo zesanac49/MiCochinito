@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardTitulo } from '@/components/ui/Card'
 import { Field, SelectField } from '@/components/ui/Field'
+import { Toggle } from '@/components/ui/Toggle'
 
 const CONFIG_DEFAULT: Configuracion = {
   valor_cuota: '50000.00',
@@ -27,7 +28,6 @@ const CONFIG_DEFAULT: Configuracion = {
   max_prestamos_activos: 2,
   max_capital_vigente: '2000000.00',
   estrategia_distribucion: 'PROPORCIONAL_AHORRO',
-  estrategia_congelada: false,
 }
 
 const SIGUIENTE: Record<string, string | null> = {
@@ -64,15 +64,26 @@ function CamposConfig({
       </SelectField>
       <Field label="Tasa base (%)" inputMode="decimal" value={cfg.tasa_interes_base}
         onChange={(e) => set({ ...cfg, tasa_interes_base: e.target.value })} />
-      <Field label="Tasa mín / máx (%)" value={`${cfg.tasa_interes_min} / ${cfg.tasa_interes_max}`}
-        onChange={(e) => {
-          const [mn, mx] = e.target.value.split('/').map((s) => s.trim())
-          set({ ...cfg, tasa_interes_min: mn || cfg.tasa_interes_min, tasa_interes_max: mx || cfg.tasa_interes_max })
-        }} />
+      <div /> {/* espaciador para alinear la rejilla */}
+      <Field label="Tasa mínima (%)" inputMode="decimal" value={cfg.tasa_interes_min}
+        onChange={(e) => set({ ...cfg, tasa_interes_min: e.target.value })} />
+      <Field label="Tasa máxima (%)" inputMode="decimal" value={cfg.tasa_interes_max}
+        onChange={(e) => set({ ...cfg, tasa_interes_max: e.target.value })} />
       <Field label="Máx. préstamos activos" type="number" min={1} value={cfg.max_prestamos_activos}
         onChange={(e) => set({ ...cfg, max_prestamos_activos: Number(e.target.value) })} />
       <Field label="Máx. capital vigente" inputMode="decimal" value={cfg.max_capital_vigente}
         onChange={(e) => set({ ...cfg, max_capital_vigente: e.target.value })} />
+      <div className="flex items-center justify-between rounded-nm-sm bg-surface px-4 py-2.5 shadow-nm-in sm:col-span-2">
+        <div>
+          <p className="text-sm font-medium">Permitir aportes extraordinarios</p>
+          <p className="text-xs text-text-secondary">Aportes de monto libre además de la cuota.</p>
+        </div>
+        <Toggle
+          activo={cfg.permite_aportes_extra}
+          onChange={() => set({ ...cfg, permite_aportes_extra: !cfg.permite_aportes_extra })}
+          etiqueta="Permitir aportes extraordinarios"
+        />
+      </div>
     </div>
   )
 }
@@ -98,6 +109,22 @@ export function Natillera() {
 
   const actual = detalle.data
   const siguiente = actual ? SIGUIENTE[actual.estado] : null
+
+  function avanzar() {
+    if (!siguiente) return
+    let msg = `¿Avanzar la natillera a ${siguiente}?`
+    if (siguiente === 'PENDIENTE_LIQUIDACION') {
+      msg =
+        '⚠️ ATENCIÓN: pasar a PENDIENTE DE LIQUIDACIÓN es IRREVERSIBLE y ' +
+        'BLOQUEA cuotas, préstamos y actividades (solo quedará liquidar). ' +
+        '¿Estás seguro de continuar?'
+    } else if (siguiente === 'ARCHIVADA') {
+      msg =
+        '⚠️ ATENCIÓN: archivar la natillera es IRREVERSIBLE y la deja en ' +
+        'solo lectura para siempre. ¿Continuar?'
+    }
+    if (confirm(msg)) transicionar.mutate(siguiente)
+  }
 
   function onCrear(e: FormEvent) {
     e.preventDefault()
@@ -130,7 +157,7 @@ export function Natillera() {
             <Button
               variante="primaria"
               cargando={transicionar.isPending}
-              onClick={() => transicionar.mutate(siguiente)}
+              onClick={avanzar}
             >
               <StepForward size={16} /> Avanzar a {siguiente}
             </Button>

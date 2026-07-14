@@ -17,27 +17,34 @@ import { rolActivo, useAuth } from '@/store/auth'
 import { cn } from '@/lib/cn'
 import { SelectorNatillera } from '@/components/SelectorNatillera'
 
+type RolNav = 'ADMINISTRADOR' | 'SUPERVISOR' | 'CLIENTE'
+
 interface ItemNav {
   to: string
   icon: LucideIcon
   texto: string
   end?: boolean
+  roles: RolNav[]
 }
 
-const NAV: ItemNav[] = [
-  { to: '/', icon: Wallet, texto: 'Resumen', end: true },
-  { to: '/natillera', icon: Building2, texto: 'Natillera' },
-  { to: '/participantes', icon: Users, texto: 'Participantes' },
-  { to: '/pagos', icon: CircleUser, texto: 'Recaudo (cuotas)' },
-  { to: '/prestamos', icon: HandCoins, texto: 'Préstamos' },
-  { to: '/multas', icon: ScrollText, texto: 'Multas' },
-  { to: '/actividades', icon: Dices, texto: 'Actividades' },
-  { to: '/reportes', icon: BarChart3, texto: 'Reportes' },
-  { to: '/liquidacion', icon: Gavel, texto: 'Liquidación' },
-]
+// Cada opción solo se muestra a los roles que realmente pueden usarla (evita
+// pantallas que darían 403 al abrirlas).
+const ADMIN_SUP: RolNav[] = ['ADMINISTRADOR', 'SUPERVISOR']
+const TODOS: RolNav[] = ['ADMINISTRADOR', 'SUPERVISOR', 'CLIENTE']
+const SOLO_ADMIN: RolNav[] = ['ADMINISTRADOR']
 
-// Solo el administrador de la natillera activa gestiona accesos (RF-1002).
-const NAV_ADMIN: ItemNav = { to: '/usuarios', icon: ShieldCheck, texto: 'Usuarios' }
+const NAV: ItemNav[] = [
+  { to: '/', icon: Wallet, texto: 'Resumen', end: true, roles: ADMIN_SUP },
+  { to: '/natillera', icon: Building2, texto: 'Natillera', roles: ADMIN_SUP },
+  { to: '/participantes', icon: Users, texto: 'Participantes', roles: ADMIN_SUP },
+  { to: '/pagos', icon: CircleUser, texto: 'Recaudo (cuotas)', roles: ADMIN_SUP },
+  { to: '/prestamos', icon: HandCoins, texto: 'Préstamos', roles: ADMIN_SUP },
+  { to: '/multas', icon: ScrollText, texto: 'Multas', roles: ADMIN_SUP },
+  { to: '/actividades', icon: Dices, texto: 'Actividades', roles: TODOS },
+  { to: '/reportes', icon: BarChart3, texto: 'Reportes', roles: ADMIN_SUP },
+  { to: '/liquidacion', icon: Gavel, texto: 'Liquidación', roles: SOLO_ADMIN },
+  { to: '/usuarios', icon: ShieldCheck, texto: 'Usuarios', roles: SOLO_ADMIN },
+]
 
 export function Layout() {
   const usuario = useAuth((s) => s.usuario)
@@ -46,7 +53,8 @@ export function Layout() {
   const limpiar = useAuth((s) => s.limpiar)
   const navigate = useNavigate()
 
-  const items = rolActivo() === 'ADMINISTRADOR' ? [...NAV, NAV_ADMIN] : NAV
+  const rol = rolActivo()
+  const items = NAV.filter((i) => rol !== null && i.roles.includes(rol as RolNav))
 
   function salir() {
     limpiar()

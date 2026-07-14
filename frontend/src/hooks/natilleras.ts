@@ -14,7 +14,6 @@ export interface Configuracion {
   max_prestamos_activos: number
   max_capital_vigente: string
   estrategia_distribucion: string
-  estrategia_congelada: boolean
 }
 
 export interface NatilleraDetalle extends Natillera {

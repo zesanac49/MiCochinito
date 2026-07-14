@@ -28,7 +28,7 @@ const TONO_ROL = {
 
 const DESC_ROL: Record<Rol, string> = {
   ADMINISTRADOR: 'Control total, incluida la gestión de accesos.',
-  SUPERVISOR: 'Operación diaria: no crea la natillera ni desembolsa préstamos.',
+  SUPERVISOR: 'Gestiona casi toda la natillera (préstamos, multas, actividades, config). No puede liquidar ni gestionar usuarios.',
   CLIENTE: 'Solo lectura de lo suyo; se vincula a un participante.',
 }
 

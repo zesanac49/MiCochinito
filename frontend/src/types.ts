@@ -6,6 +6,7 @@ export type Rol = 'ADMINISTRADOR' | 'SUPERVISOR' | 'CLIENTE'
 export interface Membresia {
   natillera_uuid: string
   natillera_nombre: string
+  natillera_estado: EstadoNatillera
   rol: Rol
 }
 

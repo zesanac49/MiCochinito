@@ -18,11 +18,15 @@ export function SelectorNatillera() {
       value={natilleraUuid ?? ''}
       onChange={(e) => setNatillera(e.target.value)}
     >
-      {membresias.map((m) => (
-        <option key={m.natillera_uuid} value={m.natillera_uuid}>
-          {m.natillera_nombre} · {m.rol.toLowerCase()}
-        </option>
-      ))}
+      {membresias.map((m) => {
+        const cerrada = m.natillera_estado === 'ARCHIVADA' || m.natillera_estado === 'LIQUIDADA'
+        return (
+          <option key={m.natillera_uuid} value={m.natillera_uuid}>
+            {m.natillera_nombre} · {m.rol.toLowerCase()}
+            {cerrada ? ` (${m.natillera_estado.toLowerCase()})` : ''}
+          </option>
+        )
+      })}
     </SelectField>
   )
 }

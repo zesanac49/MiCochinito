@@ -252,12 +252,17 @@ function Acciones({ a, nat, uuid }: { a: Actividad; nat: string; uuid: string })
                 variante="primaria"
                 cargando={sortear.isPending}
                 disabled={!sorteo.numero_ganador || !sorteo.fuente}
-                onClick={() =>
-                  sortear.mutate({
-                    numero_ganador: Number(sorteo.numero_ganador),
-                    fuente: sorteo.fuente,
-                  })
-                }
+                onClick={() => {
+                  if (
+                    confirm(
+                      `¿Registrar el número ${sorteo.numero_ganador} como ganador? El sorteo no se puede repetir.`,
+                    )
+                  )
+                    sortear.mutate({
+                      numero_ganador: Number(sorteo.numero_ganador),
+                      fuente: sorteo.fuente,
+                    })
+                }}
               >
                 <Dices size={16} /> Sortear
               </Button>
@@ -273,7 +278,18 @@ function Acciones({ a, nat, uuid }: { a: Actividad; nat: string; uuid: string })
           <p className="mb-3 text-sm text-text-secondary">
             Traslada la utilidad ({formatoCOP(a.utilidad)}) al Fondo de Rentabilidad.
           </p>
-          <Button variante="primaria" cargando={cerrar.isPending} onClick={() => cerrar.mutate(undefined)}>
+          <Button
+            variante="primaria"
+            cargando={cerrar.isPending}
+            onClick={() => {
+              if (
+                confirm(
+                  `¿Cerrar la actividad? Traslada la utilidad (${formatoCOP(a.utilidad)}) al Fondo de Rentabilidad y no se puede reabrir.`,
+                )
+              )
+                cerrar.mutate(undefined)
+            }}
+          >
             Cerrar
           </Button>
           {cerrar.isError && <p className="mt-2 text-sm text-danger">{mensajeError(cerrar.error)}</p>}

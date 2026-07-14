@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Ayuda } from '@/components/ui/Ayuda'
 import { AlertTriangle, FileDown, Gavel } from 'lucide-react'
-import { useAuth } from '@/store/auth'
+import { rolActivo, useAuth } from '@/store/auth'
 import {
   useCalcularLiquidacion,
   useConfirmarLiquidacion,
@@ -32,6 +32,19 @@ export function Liquidacion() {
   const l = liq.data
   const iniciada = !!l?.uuid
   const bloqueos = l?.bloqueos ?? []
+
+  if (rolActivo() !== 'ADMINISTRADOR') {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold tracking-tight">Liquidación</h1>
+        <Card>
+          <p className="text-sm text-text-secondary">
+            Solo los <strong>administradores</strong> pueden liquidar la natillera.
+          </p>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">

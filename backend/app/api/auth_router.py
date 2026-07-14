@@ -88,7 +88,12 @@ def me(
     if usuario is None:
         raise NoAutenticado("Usuario inexistente.")
     filas = session.execute(
-        select(UsuarioNatilleraModel.rol, NatilleraModel.uuid, NatilleraModel.nombre)
+        select(
+            UsuarioNatilleraModel.rol,
+            NatilleraModel.uuid,
+            NatilleraModel.nombre,
+            NatilleraModel.estado,
+        )
         .join(NatilleraModel, UsuarioNatilleraModel.natillera_id == NatilleraModel.id)
         .where(UsuarioNatilleraModel.usuario_id == usuario.id)
     ).all()
@@ -97,7 +102,12 @@ def me(
         email=usuario.email,
         nombre=usuario.nombre,
         membresias=[
-            MembresiaResponse(natillera_uuid=nat_uuid, natillera_nombre=nombre, rol=rol)
-            for rol, nat_uuid, nombre in filas
+            MembresiaResponse(
+                natillera_uuid=nat_uuid,
+                natillera_nombre=nombre,
+                natillera_estado=estado,
+                rol=rol,
+            )
+            for rol, nat_uuid, nombre, estado in filas
         ],
     )

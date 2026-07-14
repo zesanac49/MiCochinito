@@ -189,9 +189,10 @@ function MultaFila({ multa: m, nat }: { multa: Multa; nat: string }) {
           <Button
             variante="peligro"
             cargando={enCurso}
-            onClick={() =>
-              anular.mutate({ uuid: m.uuid, body: { justificacion: 'Anulada por el administrador' } })
-            }
+            onClick={() => {
+              const justificacion = prompt('¿Por qué se anula esta multa? (queda en la auditoría)')?.trim()
+              if (justificacion) anular.mutate({ uuid: m.uuid, body: { justificacion } })
+            }}
           >
             <Ban size={16} /> Anular
           </Button>

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.auth import Principal, Rol, require_rol
@@ -14,6 +15,7 @@ from app.modules.contabilidad.domain.conceptos import Naturaleza, TipoFondo
 from app.modules.contabilidad.infrastructure.repositorios import (
     RepositorioLedgerSQLAlchemy,
 )
+from app.modules.multas.infrastructure.modelos import MultaModel
 from app.modules.participantes.api.deps import (
     cambiar_estado_uc,
     editar_contacto_uc,
@@ -141,9 +143,20 @@ def cuenta(
             ahorros = (
                 ahorros + a.monto if a.naturaleza is Naturaleza.CREDITO else ahorros - a.monto
             )
+    # Multas impuestas y aún no pagadas (RF-203): saldo real, no siempre 0.
+    multas_pend = session.scalar(
+        select(func.coalesce(func.sum(MultaModel.valor), 0)).where(
+            MultaModel.natillera_id == nid,
+            MultaModel.participante_id == participante.id,
+            MultaModel.estado == "IMPUESTA",
+        )
+    )
     return CuentaResponse(
         participante_uuid=participante_uuid,
-        saldos=SaldosResponse(ahorros=ahorros.como_str()),
+        saldos=SaldosResponse(
+            ahorros=ahorros.como_str(),
+            multas_pendientes=Dinero(multas_pend or 0).como_str(),
+        ),
         asientos=[AsientoResponse.de_leido(a) for a in asientos],
     )
 

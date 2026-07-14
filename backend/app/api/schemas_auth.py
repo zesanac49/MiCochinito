@@ -23,6 +23,7 @@ class TokenResponse(BaseModel):
 class MembresiaResponse(BaseModel):
     natillera_uuid: str
     natillera_nombre: str
+    natillera_estado: str
     rol: str
 
 

@@ -160,9 +160,10 @@ function PrestamoCard({ prestamo: p, nat }: { prestamo: Prestamo; nat: string })
               </Button>
               <Button
                 variante="peligro"
-                onClick={() =>
-                  aprobar.mutate({ uuid: p.uuid, body: { aprobar: false, motivo: 'Rechazado' } })
-                }
+                onClick={() => {
+                  const motivo = prompt('Motivo del rechazo del préstamo:')?.trim()
+                  if (motivo) aprobar.mutate({ uuid: p.uuid, body: { aprobar: false, motivo } })
+                }}
               >
                 Rechazar
               </Button>
@@ -172,7 +173,14 @@ function PrestamoCard({ prestamo: p, nat }: { prestamo: Prestamo; nat: string })
             <Button
               variante="primaria"
               cargando={enCurso}
-              onClick={() => desembolsar.mutate({ uuid: p.uuid })}
+              onClick={() => {
+                if (
+                  confirm(
+                    `¿Desembolsar ${formatoCOP(p.capital)}? Sale del Fondo de Ahorro y queda registrado en el ledger.`,
+                  )
+                )
+                  desembolsar.mutate({ uuid: p.uuid })
+              }}
             >
               Desembolsar
             </Button>
