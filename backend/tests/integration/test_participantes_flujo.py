@@ -72,6 +72,26 @@ def test_supervisor_puede_inscribir(client: TestClient, session: Session) -> Non
     assert r.status_code == 201, r.text
 
 
+def test_supervisor_gestiona_participante(client: TestClient, session: Session) -> None:
+    # El supervisor también edita contacto, fija cuota y cambia estado (día a día).
+    usuario = crear_usuario(session)
+    nat = crear_natillera(session)
+    crear_membresia(session, usuario.id, nat.id, rol="SUPERVISOR")
+    session.commit()
+    h = bearer(usuario.uuid)
+    base = f"/api/v1/natilleras/{nat.uuid}/participantes"
+    p = client.post(base, json=_PART, headers=h).json()
+    assert client.put(
+        f"{base}/{p['uuid']}", json={"telefono": "3001112233"}, headers=h
+    ).status_code == 200
+    assert client.put(
+        f"{base}/{p['uuid']}/cuota", json={"valor_cuota": "75000.00"}, headers=h
+    ).status_code == 200
+    assert client.post(
+        f"{base}/{p['uuid']}/estado", json={"estado": "SUSPENDIDO"}, headers=h
+    ).status_code == 200
+
+
 def test_cliente_no_puede_inscribir(client: TestClient, session: Session) -> None:
     usuario = crear_usuario(session)
     nat = crear_natillera(session)

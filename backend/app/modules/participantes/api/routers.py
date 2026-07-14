@@ -95,7 +95,7 @@ def editar(
     natillera_uuid: str,
     participante_uuid: str,
     datos: EditarContactoRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> ParticipanteResponse:
@@ -109,7 +109,7 @@ def fijar_cuota(
     natillera_uuid: str,
     participante_uuid: str,
     datos: FijarCuotaRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> ParticipanteResponse:
@@ -153,7 +153,7 @@ def cambiar_estado(
     natillera_uuid: str,
     participante_uuid: str,
     datos: CambiarEstadoRequest,
-    principal: Principal = Depends(_ADMIN),
+    principal: Principal = Depends(_ADMIN_SUP),
     session: Session = Depends(obtener_session),
     bus: BusDeEventos = Depends(obtener_bus),
 ) -> ParticipanteResponse:
