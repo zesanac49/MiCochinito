@@ -39,20 +39,22 @@ export const AYUDA = {
     titulo: 'Participantes',
     intro: 'Inscribe a las personas que ahorran en la natillera.',
     pasos: [
-      'Llena nombre, documento y fecha de ingreso.',
+      'Llena nombre, documento, fecha de ingreso y el valor de su cuota (viene prellenado con el de la natillera).',
       'Pulsa Inscribir.',
-      'Haz clic en un nombre para ver su estado de cuenta.',
+      'Haz clic en un nombre para ver su estado de cuenta y ajustar su cuota.',
     ],
     errores: [
       'No puede haber dos participantes con el mismo documento.',
       'Un participante no se borra: si se retira, márcalo como Retirado y conserva su historial.',
     ],
+    consejo: 'Cada persona puede tener su propia cuota mensual; el valor de la config es solo el por defecto.',
   },
   participante_detalle: {
     titulo: 'Detalle del participante',
     intro: 'Estado de cuenta de una persona y sus operaciones individuales.',
     pasos: [
       'Consulta sus ahorros y todos sus movimientos.',
+      'Ajusta su cuota mensual si es distinta a la de los demás.',
       'Paga la cuota de un período o registra un aporte extraordinario.',
       'Cambia su estado (Activo, Suspendido o Retirado).',
     ],
@@ -64,10 +66,10 @@ export const AYUDA = {
     pasos: [
       'Elige el período que estás cobrando.',
       'Marca con el interruptor a quienes pagaron.',
-      'Revisa el total estimado y pulsa Registrar.',
+      'Revisa el total (suma de las cuotas de los marcados) y pulsa Registrar.',
     ],
     errores: [
-      'El monto no se escribe: sale de la cuota configurada.',
+      'El monto no se escribe: es la cuota propia de cada persona (o el valor por defecto si no tiene una).',
       'Si marcas a alguien que ya pagó ese período, se omite (no cobra doble).',
     ],
     consejo: 'Para cobrarle a una sola persona, hazlo desde su detalle en Participantes.',
@@ -157,7 +159,7 @@ export const AYUDA = {
       'Puedes cambiar el rol, reiniciar la clave o quitar el acceso.',
     ],
     errores: [
-      'Administrador hace todo; Supervisor opera el día a día; Cliente solo lee lo suyo.',
+      'Administrador: todo. Supervisor: casi toda la gestión, menos crear la natillera, liquidarla y gestionar usuarios. Cliente: solo lee lo suyo.',
       'No puedes dejar la natillera sin ningún administrador.',
     ],
   },
