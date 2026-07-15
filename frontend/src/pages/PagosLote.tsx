@@ -5,7 +5,14 @@ import { useAuth } from '@/store/auth'
 import { usePagarLote, useParticipantes, usePeriodos } from '@/hooks/data'
 import { useNatillera } from '@/hooks/natilleras'
 import { mensajeError } from '@/lib/api'
-import { formatoCOP, nombrePeriodo, sufijoPeriodicidad } from '@/lib/formato'
+import {
+  cobrosPorMes,
+  cuotaPorPeriodo,
+  formatoCOP,
+  nombrePeriodo,
+  sufijoPeriodicidad,
+  sumarMontos,
+} from '@/lib/formato'
 import type { Participante, ResumenLote } from '@/types'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -24,9 +31,16 @@ export function PagosLote() {
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set())
   const [resumen, setResumen] = useState<ResumenLote | null>(null)
 
-  // Cuota por defecto de la natillera; cada persona puede tener la suya.
-  const cuotaDefault = natillera.data?.configuracion?.valor_cuota ?? null
-  const cuotaDe = (p: Participante): string | null => p.valor_cuota ?? cuotaDefault
+  // La cuota guardada (config o participante) es MENSUAL. En cada período se cobra
+  // esa cuota ÷ cobros del mes (quincenal ÷2), igual que el backend.
+  const periodicidad = natillera.data?.configuracion?.periodicidad_cuota
+  const cobros = cobrosPorMes(periodicidad)
+  const cuotaDefaultMensual = natillera.data?.configuracion?.valor_cuota ?? null
+  // Cuota efectiva de ESTE período para cada persona (su mensual ÷ cobros del mes).
+  const cuotaDe = (p: Participante): string | null => {
+    const mensual = p.valor_cuota ?? cuotaDefaultMensual
+    return mensual == null ? null : cuotaPorPeriodo(mensual, cobros)
+  }
   const periodoNombre = periodos.data?.find((p) => p.uuid === periodoUuid)
 
   const activos = useMemo(
@@ -34,13 +48,14 @@ export function PagosLote() {
     [participantes.data],
   )
 
-  // Total estimado = suma de las cuotas de los seleccionados (cada quien la suya).
+  // Total estimado = suma (en centavos, sin flotante) de las cuotas por período.
   const totalEstimado =
     seleccion.size > 0
-      ? String(
+      ? sumarMontos(
           activos
             .filter((p) => seleccion.has(p.uuid))
-            .reduce((acc, p) => acc + Number(cuotaDe(p) ?? 0), 0),
+            .map((p) => cuotaDe(p))
+            .filter((v): v is string => v != null),
         )
       : null
 
@@ -101,14 +116,21 @@ export function PagosLote() {
               ))}
             </SelectField>
           </div>
-          {cuotaDefault && (
+          {cuotaDefaultMensual && (
             <div className="flex items-center gap-2 rounded-nm-sm bg-surface px-4 py-2.5 shadow-nm-in">
               <PiggyBank size={18} className="text-accent" />
               <div className="text-right">
                 <p className="text-[11px] uppercase tracking-[0.06em] text-text-secondary">
-                  Cuota por defecto
+                  Cuota por período
                 </p>
-                <p className="tabular font-bold text-accent">{formatoCOP(cuotaDefault)}</p>
+                <p className="tabular font-bold text-accent">
+                  {formatoCOP(cuotaPorPeriodo(cuotaDefaultMensual, cobros))}
+                </p>
+                {cobros > 1 && (
+                  <p className="text-[10px] text-text-secondary">
+                    {formatoCOP(cuotaDefaultMensual)}/mes ÷ {cobros}
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -116,7 +138,11 @@ export function PagosLote() {
         {periodoNombre && (
           <p className="mt-2 text-xs text-text-secondary">
             Cobrando la cuota de <strong>{nombrePeriodo(periodoNombre.anio, periodoNombre.mes)}</strong>.
-            Cada persona paga <strong>su propia cuota</strong>.
+            Cada persona paga <strong>su propia cuota</strong>
+            {cobros > 1 && (
+              <> — la mensual dividida entre {cobros} ({periodicidad === 'QUINCENAL' ? 'quincenal' : 'periodicidad'})</>
+            )}
+            .
           </p>
         )}
       </Card>

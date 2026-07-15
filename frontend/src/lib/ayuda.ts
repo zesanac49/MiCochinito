@@ -70,6 +70,7 @@ export const AYUDA = {
     ],
     errores: [
       'El monto no se escribe: es la cuota propia de cada persona (o el valor por defecto si no tiene una).',
+      'La cuota que se cobra es la MENSUAL dividida entre la periodicidad: si la natillera es quincenal, cada período cobra la mitad (la suma de las 2 quincenas = la cuota mensual).',
       'Si marcas a alguien que ya pagó ese período, se omite (no cobra doble).',
     ],
     consejo: 'Para cobrarle a una sola persona, hazlo desde su detalle en Participantes.',

@@ -12,8 +12,9 @@ import {
   usePagarCuota,
   useParticipante,
 } from '@/hooks/participante'
+import { useNatillera } from '@/hooks/natilleras'
 import { mensajeError } from '@/lib/api'
-import { formatoCOP, nombrePeriodo } from '@/lib/formato'
+import { formatoCOP, nombrePeriodo, sufijoPeriodicidad } from '@/lib/formato'
 import type { EstadoParticipante } from '@/types'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -27,6 +28,8 @@ const TONO = { ACTIVO: 'acento', SUSPENDIDO: 'alerta', RETIRADO: 'neutro' } as c
 export function ParticipanteDetalle() {
   const nat = useAuth((s) => s.natilleraUuid) ?? ''
   const { uuid = '' } = useParams()
+  const natillera = useNatillera(nat)
+  const periodicidad = natillera.data?.configuracion?.periodicidad_cuota
   const participante = useParticipante(nat, uuid)
   const cuenta = useCuenta(nat, uuid)
   const periodos = usePeriodos(nat)
@@ -120,6 +123,7 @@ export function ParticipanteDetalle() {
               {periodos.data?.map((per) => (
                 <option key={per.uuid} value={per.uuid}>
                   {nombrePeriodo(per.anio, per.mes)}
+                  {sufijoPeriodicidad(per.secuencia, periodicidad)}
                 </option>
               ))}
             </SelectField>
