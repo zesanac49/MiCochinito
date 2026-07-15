@@ -18,7 +18,10 @@ from app.modules.contabilidad.domain.conceptos import (
     Naturaleza,
     TipoFondo,
 )
-from app.modules.liquidacion.application.puertos import RepositorioLiquidacion
+from app.modules.liquidacion.application.puertos import (
+    ProveedorMoraCuotas,
+    RepositorioLiquidacion,
+)
 from app.modules.liquidacion.domain.estrategias import (
     ParticipanteLiquidable,
     crear_estrategia,
@@ -57,6 +60,7 @@ class ServicioLiquidacion:
         actividades: RepositorioActividades,
         contabilidad: ServicioContabilidad,
         auditoria: FabricaAuditoria,
+        mora_cuotas: ProveedorMoraCuotas,
     ) -> None:
         self._uow = uow
         self._consulta = consulta
@@ -67,6 +71,7 @@ class ServicioLiquidacion:
         self._actividades = actividades
         self._contabilidad = contabilidad
         self._auditoria = auditoria
+        self._mora_cuotas = mora_cuotas
 
     # --- Bloqueos -----------------------------------------------------------
     def _bloqueos(self) -> list[Bloqueo]:
@@ -167,6 +172,7 @@ class ServicioLiquidacion:
             participaciones = crear_estrategia(estrategia_nombre).distribuir(
                 fondo_rent, liquidables
             )
+            valor_mora = natillera.configuracion.valor_mora
             detalles = [
                 DetalleLiquidacion(
                     participante_id=p.id,
@@ -174,7 +180,9 @@ class ServicioLiquidacion:
                     participacion_rentabilidad=participaciones.get(p.id, Dinero.cero()),
                     capital_pendiente=self._prestamos.capital_vigente_de(p.id),
                     intereses_pendientes=self._prestamos.interes_pendiente_de(p.id, hoy),
-                    multas_pendientes=self._multas.total_pendientes_de(p.id),
+                    # Multas impuestas + mora de cuotas de ahorro atrasadas (3B).
+                    multas_pendientes=self._multas.total_pendientes_de(p.id)
+                    + self._mora_cuotas.mora_pendiente_de(p.id, valor_mora, hoy),
                 )
                 for p in activos
                 if p.id is not None

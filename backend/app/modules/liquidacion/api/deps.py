@@ -11,6 +11,7 @@ from app.modules.actividades.infrastructure.repositorios import (
 from app.modules.contabilidad.infrastructure.repositorios import (
     FabricaContabilidadSQLAlchemy,
 )
+from app.modules.cuotas.infrastructure.repositorios import RepositorioCuotasSQLAlchemy
 from app.modules.liquidacion.application.servicios import ServicioLiquidacion
 from app.modules.liquidacion.infrastructure.repositorios import (
     RepositorioLiquidacionSQLAlchemy,
@@ -45,6 +46,7 @@ def servicio_liquidacion(
         RepositorioActividadesSQLAlchemy(session, natillera_id),
         FabricaContabilidadSQLAlchemy(session).para(natillera_id),
         FabricaAuditoriaSQLAlchemy(session),
+        RepositorioCuotasSQLAlchemy(session, natillera_id),
     )
 
 

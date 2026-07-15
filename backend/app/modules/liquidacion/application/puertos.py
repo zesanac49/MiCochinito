@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Protocol
 
 from app.modules.liquidacion.domain.liquidacion import Liquidacion
+from app.shared.domain.dinero import Dinero
+
+
+class ProveedorMoraCuotas(Protocol):
+    """Calcula la mora de cuotas de ahorro atrasadas de un participante (3B)."""
+
+    def mora_pendiente_de(
+        self, participante_id: int, valor_mora: Dinero, hoy: date
+    ) -> Dinero: ...
 
 
 class RepositorioLiquidacion(Protocol):
