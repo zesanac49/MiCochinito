@@ -27,7 +27,7 @@ class TasaInteres:
             )
         try:
             valor = Decimal(porcentaje)
-        except (InvalidOperation, ValueError) as exc:
+        except (InvalidOperation, ValueError, TypeError) as exc:
             raise ErrorDeValidacionDeDominio("Tasa inválida.", {"valor": str(porcentaje)}) from exc
         if not valor.is_finite() or valor <= 0:
             raise ErrorDeValidacionDeDominio("La tasa debe ser positiva.", {"valor": str(valor)})

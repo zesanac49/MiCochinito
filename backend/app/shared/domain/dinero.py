@@ -53,7 +53,10 @@ class Dinero:
             ) from exc
         if not valor.is_finite():
             raise ErrorMonetario("El monto debe ser finito.", {"valor": str(monto)})
-        object.__setattr__(self, "_monto", valor.quantize(_CENTAVO, rounding=ROUND_HALF_UP))
+        cantidad = valor.quantize(_CENTAVO, rounding=ROUND_HALF_UP)
+        if cantidad == 0:
+            cantidad = Decimal("0.00")  # normaliza el cero negativo (-0.00 -> 0.00)
+        object.__setattr__(self, "_monto", cantidad)
 
     # --- Fábricas -----------------------------------------------------------
     @classmethod

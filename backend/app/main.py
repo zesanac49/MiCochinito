@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -101,7 +102,9 @@ def _registrar_handlers(app: FastAPI) -> None:
                 "VALIDACION",
                 "Los datos enviados no son válidos.",
                 _request_id_de(request),
-                {"errores": exc.errors()},
+                # jsonable_encoder: los errores de un field_validator traen el
+                # ValueError crudo (no serializable) -> sin esto caería a 500.
+                {"errores": jsonable_encoder(exc.errors())},
             ),
         )
 
