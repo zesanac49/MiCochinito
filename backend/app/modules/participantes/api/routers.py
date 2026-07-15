@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -34,6 +36,9 @@ from app.modules.participantes.api.schemas import (
     SaldosResponse,
 )
 from app.modules.participantes.domain.participante import EstadoParticipante
+from app.modules.prestamos.infrastructure.repositorios import (
+    RepositorioPrestamosSQLAlchemy,
+)
 from app.shared.domain.dinero import Dinero
 
 router = APIRouter(
@@ -151,10 +156,15 @@ def cuenta(
             MultaModel.estado == "IMPUESTA",
         )
     )
+    # Interés devengado no pagado de sus préstamos (INV-14, #10a).
+    intereses_pend = RepositorioPrestamosSQLAlchemy(session, nid).interes_pendiente_de(
+        participante.id, date.today()
+    )
     return CuentaResponse(
         participante_uuid=participante_uuid,
         saldos=SaldosResponse(
             ahorros=ahorros.como_str(),
+            intereses_pendientes=intereses_pend.como_str(),
             multas_pendientes=Dinero(multas_pend or 0).como_str(),
         ),
         asientos=[AsientoResponse.de_leido(a) for a in asientos],

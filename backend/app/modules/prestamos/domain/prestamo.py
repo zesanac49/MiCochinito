@@ -9,6 +9,7 @@ simple sobre el saldo, interés primero:
 
 from __future__ import annotations
 
+import calendar
 from datetime import date
 
 from app.modules.prestamos.domain.descomposicion import Descomposicion
@@ -18,6 +19,25 @@ from app.shared.domain.base import RaizDeAgregado
 from app.shared.domain.dinero import Dinero
 from app.shared.domain.excepciones import ErrorDeValidacionDeDominio, TransicionInvalida
 from app.shared.domain.tasa import TasaInteres
+
+
+def _sumar_meses(d: date, meses: int) -> date:
+    """Suma `meses` a una fecha, acotando el día al último del mes destino."""
+    total = d.month - 1 + meses
+    anio = d.year + total // 12
+    mes = total % 12 + 1
+    dia = min(d.day, calendar.monthrange(anio, mes)[1])
+    return date(anio, mes, dia)
+
+
+def _meses_completos(desde: date, hasta: date) -> int:
+    """Meses calendario completos entre dos fechas (0 si `hasta` <= `desde`)."""
+    if hasta <= desde:
+        return 0
+    meses = (hasta.year - desde.year) * 12 + (hasta.month - desde.month)
+    if hasta.day < desde.day:
+        meses -= 1
+    return max(meses, 0)
 
 
 class Prestamo(RaizDeAgregado):
@@ -30,6 +50,8 @@ class Prestamo(RaizDeAgregado):
         estado: EstadoPrestamo = EstadoPrestamo.SOLICITADO,
         saldo_capital: Dinero | None = None,
         fecha_desembolso: date | None = None,
+        interes_acumulado: Dinero | None = None,
+        fecha_ultimo_calculo: date | None = None,
         motivo_rechazo: str | None = None,
         id: int | None = None,
         uuid: str | None = None,
@@ -46,6 +68,10 @@ class Prestamo(RaizDeAgregado):
         self._estado = estado
         self._saldo_capital = saldo_capital if saldo_capital is not None else Dinero.cero()
         self._fecha_desembolso = fecha_desembolso
+        # Interés devengado no pagado y fecha hasta la que ya se calculó (interés
+        # simple por meses transcurridos; el primer mes se cobra al desembolsar).
+        self._interes_acumulado = interes_acumulado or Dinero.cero()
+        self._fecha_ultimo_calculo = fecha_ultimo_calculo
         self._motivo_rechazo = motivo_rechazo
         self.uuid = uuid
 
@@ -86,6 +112,14 @@ class Prestamo(RaizDeAgregado):
         return self._fecha_desembolso
 
     @property
+    def interes_acumulado(self) -> Dinero:
+        return self._interes_acumulado
+
+    @property
+    def fecha_ultimo_calculo(self) -> date | None:
+        return self._fecha_ultimo_calculo
+
+    @property
     def motivo_rechazo(self) -> str | None:
         return self._motivo_rechazo
 
@@ -107,10 +141,13 @@ class Prestamo(RaizDeAgregado):
 
     def desembolsar(self, fecha: date) -> None:
         """Desembolsa: el saldo de capital pasa a ser el capital prestado y el
-        préstamo queda EN_PAGO (RF-403)."""
+        préstamo queda EN_PAGO (RF-403). Se cobra el primer mes de interés desde
+        el desembolso; el reloj de interés avanza un mes."""
         self._transicionar(EstadoPrestamo.DESEMBOLSADO)
         self._saldo_capital = self._capital
         self._fecha_desembolso = fecha
+        self._interes_acumulado = self._capital.multiplicado_por(self._tasa.fraccion)
+        self._fecha_ultimo_calculo = _sumar_meses(fecha, 1)
         self._transicionar(EstadoPrestamo.EN_PAGO)
 
     def marcar_mora(self) -> None:
@@ -119,9 +156,34 @@ class Prestamo(RaizDeAgregado):
     def regularizar(self) -> None:
         self._transicionar(EstadoPrestamo.EN_PAGO)
 
-    def registrar_pago(self, monto: Dinero) -> Descomposicion:
-        """Descompone el pago en interés (primero) y capital, reduce el saldo y,
-        si queda en cero, marca PAGADO (RN-033..035, INV-04)."""
+    def _devengar(self, hasta: date) -> None:
+        """Acumula el interés simple de los meses completos transcurridos desde el
+        último cálculo, sobre el saldo de capital vigente."""
+        if self._fecha_ultimo_calculo is None or self._saldo_capital.es_cero():
+            return
+        meses = _meses_completos(self._fecha_ultimo_calculo, hasta)
+        if meses <= 0:
+            return
+        interes = self._saldo_capital.multiplicado_por(self._tasa.fraccion).multiplicado_por(meses)
+        self._interes_acumulado = self._interes_acumulado + interes
+        self._fecha_ultimo_calculo = _sumar_meses(self._fecha_ultimo_calculo, meses)
+
+    def interes_pendiente(self, hasta: date) -> Dinero:
+        """Interés devengado no pagado a la fecha (sin mutar): el acumulado más el
+        interés de los meses transcurridos desde el último cálculo (RN-072/INV-14)."""
+        pendiente = self._interes_acumulado
+        if self._fecha_ultimo_calculo is not None and self._saldo_capital.es_positivo():
+            meses = _meses_completos(self._fecha_ultimo_calculo, hasta)
+            if meses > 0:
+                pendiente = pendiente + self._saldo_capital.multiplicado_por(
+                    self._tasa.fraccion
+                ).multiplicado_por(meses)
+        return pendiente
+
+    def registrar_pago(self, monto: Dinero, fecha: date) -> Descomposicion:
+        """Devenga el interés hasta `fecha`, luego descompone el pago en interés
+        (primero) y capital, reduce el saldo y marca PAGADO al saldar todo
+        (RN-033..035, INV-04)."""
         if self._estado not in (EstadoPrestamo.EN_PAGO, EstadoPrestamo.EN_MORA):
             raise TransicionInvalida(
                 "Solo se puede pagar un préstamo en pago o en mora.",
@@ -130,20 +192,19 @@ class Prestamo(RaizDeAgregado):
         if not monto.es_positivo():
             raise PagoInvalido("El pago debe ser positivo.")
 
-        interes_periodo = self._saldo_capital.multiplicado_por(self._tasa.fraccion)
-        adeudado = self._saldo_capital + interes_periodo
+        self._devengar(fecha)
+        adeudado = self._saldo_capital + self._interes_acumulado
         if monto > adeudado:
             raise PagoInvalido(
                 "El pago excede lo adeudado.",
                 {"monto": monto.como_str(), "adeudado": adeudado.como_str()},
             )
 
-        if monto <= interes_periodo:
-            desc = Descomposicion(capital=Dinero.cero(), interes=monto)
-        else:
-            desc = Descomposicion(capital=monto - interes_periodo, interes=interes_periodo)
+        interes_pagado = monto if monto <= self._interes_acumulado else self._interes_acumulado
+        self._interes_acumulado = self._interes_acumulado - interes_pagado
+        capital_pagado = monto - interes_pagado
+        self._saldo_capital = self._saldo_capital - capital_pagado
 
-        self._saldo_capital = self._saldo_capital - desc.capital
-        if self._saldo_capital.es_cero():
+        if self._saldo_capital.es_cero() and self._interes_acumulado.es_cero():
             self._transicionar(EstadoPrestamo.PAGADO)
-        return desc
+        return Descomposicion(capital=capital_pagado, interes=interes_pagado)

@@ -168,7 +168,7 @@ class ServicioPrestamos:
         with self._uow:
             self._consulta.exigir_operacion(natillera_uuid, "COBRAR_CARTERA")
             prestamo = self._cargar(prestamo_uuid)
-            desc = prestamo.registrar_pago(monto)
+            desc = prestamo.registrar_pago(monto, hoy)
             assert prestamo.id is not None
             asientos: list[AsientoLeido] = []
             asiento_cap_id: int | None = None

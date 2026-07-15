@@ -1,8 +1,9 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import { Ayuda } from '@/components/ui/Ayuda'
 import { AlarmClock, HandCoins } from 'lucide-react'
 import { useAuth } from '@/store/auth'
 import { useParticipantes } from '@/hooks/data'
+import { useNatillera } from '@/hooks/natilleras'
 import {
   type NuevoPrestamo,
   useAprobarPrestamo,
@@ -33,21 +34,28 @@ const TONO: Record<EstadoPrestamo, 'acento' | 'neutro' | 'peligro' | 'alerta'> =
 const VACIO: NuevoPrestamo = {
   participante_uuid: '',
   capital: '',
-  tasa: '2.0',
+  tasa: '',
   plazo_meses: 12,
 }
 
 export function Prestamos() {
   const nat = useAuth((s) => s.natilleraUuid) ?? ''
+  const natillera = useNatillera(nat)
+  const tasaBase = natillera.data?.configuracion?.tasa_interes_base ?? ''
   const participantes = useParticipantes(nat)
   const prestamos = usePrestamos(nat)
   const solicitar = useSolicitarPrestamo(nat)
   const mora = useDetectarMora(nat)
   const [form, setForm] = useState<NuevoPrestamo>(VACIO)
 
+  // Propone la tasa configurada en la natillera (editable dentro de mín/máx).
+  useEffect(() => {
+    if (tasaBase) setForm((f) => (f.tasa ? f : { ...f, tasa: tasaBase }))
+  }, [tasaBase])
+
   function onSolicitar(e: FormEvent) {
     e.preventDefault()
-    solicitar.mutate(form, { onSuccess: () => setForm({ ...VACIO }) })
+    solicitar.mutate(form, { onSuccess: () => setForm({ ...VACIO, tasa: tasaBase }) })
   }
 
   return (

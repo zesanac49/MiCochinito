@@ -21,6 +21,10 @@ class RepositorioPrestamos(Protocol):
 
     def capital_vigente_de(self, participante_id: int) -> Dinero: ...
 
+    def interes_pendiente_de(self, participante_id: int, hasta: date) -> Dinero:
+        """Interés devengado no pagado (a la fecha) de los préstamos con saldo."""
+        ...
+
     def listar(self, participante_id: int | None = None) -> list[Prestamo]: ...
 
     def en_pago(self) -> list[Prestamo]:

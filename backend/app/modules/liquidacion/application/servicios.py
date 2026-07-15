@@ -173,7 +173,7 @@ class ServicioLiquidacion:
                     ahorros=ahorros[p.id],
                     participacion_rentabilidad=participaciones.get(p.id, Dinero.cero()),
                     capital_pendiente=self._prestamos.capital_vigente_de(p.id),
-                    intereses_pendientes=Dinero.cero(),
+                    intereses_pendientes=self._prestamos.interes_pendiente_de(p.id, hoy),
                     multas_pendientes=self._multas.total_pendientes_de(p.id),
                 )
                 for p in activos

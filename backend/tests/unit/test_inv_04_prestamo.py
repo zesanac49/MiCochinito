@@ -20,11 +20,13 @@ from app.modules.prestamos.domain.prestamo import Prestamo
 from app.shared.domain.dinero import Dinero
 from app.shared.domain.tasa import TasaInteres
 
+_FECHA = date(2026, 1, 15)  # se desembolsa y paga el mismo día → 1 mes de interés
+
 
 def _prestamo(capital: str = "1000000", tasa: str = "2") -> Prestamo:
     p = Prestamo.solicitar(1, Dinero(capital), TasaInteres(Decimal(tasa)), plazo_meses=12)
     p.aprobar()
-    p.desembolsar(date(2026, 1, 15))
+    p.desembolsar(_FECHA)
     return p
 
 
@@ -35,8 +37,8 @@ def test_desembolso_deja_saldo_igual_al_capital() -> None:
 
 
 def test_pago_interes_primero() -> None:
-    p = _prestamo(capital="1000000", tasa="2")  # interés del período = 20.000
-    desc = p.registrar_pago(Dinero("120000"))
+    p = _prestamo(capital="1000000", tasa="2")  # primer mes de interés = 20.000
+    desc = p.registrar_pago(Dinero("120000"), _FECHA)
     assert desc.interes == Dinero("20000.00")
     assert desc.capital == Dinero("100000.00")
     assert desc.capital + desc.interes == Dinero("120000.00")
@@ -45,7 +47,7 @@ def test_pago_interes_primero() -> None:
 
 def test_pago_menor_al_interes_no_abona_capital() -> None:
     p = _prestamo(capital="1000000", tasa="2")  # interés = 20.000
-    desc = p.registrar_pago(Dinero("15000"))
+    desc = p.registrar_pago(Dinero("15000"), _FECHA)
     assert desc.capital.es_cero()
     assert desc.interes == Dinero("15000.00")
     assert p.saldo_capital == Dinero("1000000.00")
@@ -54,15 +56,21 @@ def test_pago_menor_al_interes_no_abona_capital() -> None:
 def test_pago_total_marca_pagado() -> None:
     p = _prestamo(capital="1000000", tasa="2")
     # Adeudado = saldo + interés = 1.020.000
-    p.registrar_pago(Dinero("1020000"))
+    p.registrar_pago(Dinero("1020000"), _FECHA)
     assert p.estado is EstadoPrestamo.PAGADO
     assert p.saldo_capital.es_cero()
+
+
+def test_interes_por_meses_transcurridos() -> None:
+    # Sin pagar, a 3 meses del desembolso se deben 3 meses de interés.
+    p = _prestamo(capital="1000000", tasa="3")
+    assert p.interes_pendiente(date(2026, 4, 15)) == Dinero("90000.00")
 
 
 def test_pago_excede_adeudado_es_rechazado() -> None:
     p = _prestamo(capital="1000000", tasa="2")
     with pytest.raises(PagoInvalido):
-        p.registrar_pago(Dinero("2000000"))
+        p.registrar_pago(Dinero("2000000"), _FECHA)
 
 
 capitales = st.decimals(
@@ -84,12 +92,12 @@ def test_prop_inv_04_capital_retorna_integro(capital: Decimal, tasa: Decimal) ->
     guarda = 0
     while p.estado is not EstadoPrestamo.PAGADO and guarda < 500:
         guarda += 1
-        interes = p.saldo_capital.multiplicado_por(TasaInteres(tasa).fraccion)
+        interes = p.interes_pendiente(_FECHA)  # interés real devengado a la fecha
         adeudado = p.saldo_capital + interes
         # Paga el interés + un trozo de capital (o liquida si el saldo es pequeño).
         chunk = Dinero("50000")
         monto = adeudado if p.saldo_capital <= chunk else interes + chunk
-        desc = p.registrar_pago(monto)
+        desc = p.registrar_pago(monto, _FECHA)
         assert desc.capital + desc.interes == monto  # RN-033 exacto
         capital_acumulado = capital_acumulado + desc.capital
     assert p.estado is EstadoPrestamo.PAGADO

@@ -9,7 +9,9 @@ from tests.conftest import bearer, crear_membresia, crear_natillera, crear_usuar
 from tests.integration.test_cuotas_flujo import _CONFIG
 
 
-def _operativa(client: TestClient, session: Session, periodicidad: str) -> tuple[str, dict[str, str]]:
+def _operativa(
+    client: TestClient, session: Session, periodicidad: str
+) -> tuple[str, dict[str, str]]:
     u = crear_usuario(session)
     nat = crear_natillera(session)  # ciclo 2026-01-01 → 2026-12-31 (12 meses)
     crear_membresia(session, u.id, nat.id)

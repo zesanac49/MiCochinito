@@ -40,6 +40,8 @@ def _a_dominio(m: PrestamoModel) -> Prestamo:
         estado=EstadoPrestamo(m.estado),
         saldo_capital=Dinero(m.saldo_capital),
         fecha_desembolso=m.fecha_desembolso,
+        interes_acumulado=Dinero(m.interes_acumulado),
+        fecha_ultimo_calculo=m.fecha_ultimo_calculo,
         motivo_rechazo=m.motivo_rechazo,
         id=m.id,
         uuid=m.uuid,
@@ -61,6 +63,8 @@ class RepositorioPrestamosSQLAlchemy:
             estado=prestamo.estado.value,
             saldo_capital=prestamo.saldo_capital.monto,
             fecha_desembolso=prestamo.fecha_desembolso,
+            interes_acumulado=prestamo.interes_acumulado.monto,
+            fecha_ultimo_calculo=prestamo.fecha_ultimo_calculo,
             motivo_rechazo=prestamo.motivo_rechazo,
         )
         self._session.add(m)
@@ -76,6 +80,8 @@ class RepositorioPrestamosSQLAlchemy:
         m.estado = prestamo.estado.value
         m.saldo_capital = prestamo.saldo_capital.monto
         m.fecha_desembolso = prestamo.fecha_desembolso
+        m.interes_acumulado = prestamo.interes_acumulado.monto
+        m.fecha_ultimo_calculo = prestamo.fecha_ultimo_calculo
         m.motivo_rechazo = prestamo.motivo_rechazo
 
     def obtener_por_uuid(self, uuid: str) -> Prestamo | None:
@@ -94,6 +100,19 @@ class RepositorioPrestamosSQLAlchemy:
             PrestamoModel.estado.in_(_ACTIVOS),
         )
         return int(self._session.scalar(stmt) or 0)
+
+    def interes_pendiente_de(self, participante_id: int, hasta: date) -> Dinero:
+        """Suma el interés devengado no pagado (a la fecha) de los préstamos con
+        saldo del participante (RN-072/INV-14, #10a)."""
+        stmt = select(PrestamoModel).where(
+            PrestamoModel.natillera_id == self._natillera_id,
+            PrestamoModel.participante_id == participante_id,
+            PrestamoModel.estado.in_(_CON_SALDO),
+        )
+        total = Dinero.cero()
+        for m in self._session.scalars(stmt).all():
+            total = total + _a_dominio(m).interes_pendiente(hasta)
+        return total
 
     def capital_vigente_de(self, participante_id: int) -> Dinero:
         stmt = select(PrestamoModel.saldo_capital).where(

@@ -42,4 +42,4 @@ def test_mora_y_regularizacion() -> None:
 
 def test_no_se_paga_un_prestamo_solicitado() -> None:
     with pytest.raises(TransicionInvalida):
-        _nuevo().registrar_pago(Dinero("1000"))
+        _nuevo().registrar_pago(Dinero("1000"), date(2026, 1, 1))

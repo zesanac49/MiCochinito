@@ -39,6 +39,9 @@ class PrestamoModel(ModeloTenant):
     estado: Mapped[str] = mapped_column(String(30), nullable=False, default="SOLICITADO")
     motivo_rechazo: Mapped[str | None] = mapped_column(String(255), nullable=True)
     saldo_capital: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False, default=0)
+    # Interés simple devengado no pagado y fecha hasta la que ya se calculó.
+    interes_acumulado: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False, default=0)
+    fecha_ultimo_calculo: Mapped[date | None] = mapped_column(Date, nullable=True)
 
 
 class PrestamoPagoModel(ModeloTenant):
