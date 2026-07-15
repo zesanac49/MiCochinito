@@ -5,7 +5,7 @@ import { useAuth } from '@/store/auth'
 import { usePagarLote, useParticipantes, usePeriodos } from '@/hooks/data'
 import { useNatillera } from '@/hooks/natilleras'
 import { mensajeError } from '@/lib/api'
-import { formatoCOP, nombrePeriodo } from '@/lib/formato'
+import { formatoCOP, nombrePeriodo, sufijoPeriodicidad } from '@/lib/formato'
 import type { Participante, ResumenLote } from '@/types'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -96,6 +96,7 @@ export function PagosLote() {
               {periodos.data?.map((p) => (
                 <option key={p.uuid} value={p.uuid}>
                   {nombrePeriodo(p.anio, p.mes)}
+                  {sufijoPeriodicidad(p.secuencia, natillera.data?.configuracion?.periodicidad_cuota)}
                 </option>
               ))}
             </SelectField>

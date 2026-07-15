@@ -69,10 +69,14 @@ class FondoModel(ModeloTenant):
 
 class PeriodoModel(ModeloTenant):
     __tablename__ = "periodos"
-    __table_args__ = (UniqueConstraint("natillera_id", "anio", "mes", name="uq_periodo"),)
+    __table_args__ = (
+        UniqueConstraint("natillera_id", "anio", "mes", "secuencia", name="uq_periodo"),
+    )
 
     anio: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     mes: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    # Sub-período del mes (1..N según periodicidad): 1=mensual, 1-2=quincenal, ...
+    secuencia: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=1)
     fecha_limite_cuota: Mapped[date | None] = mapped_column(Date, nullable=True)
     conciliado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 

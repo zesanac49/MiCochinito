@@ -86,6 +86,7 @@ class PeriodoResponse(BaseModel):
     uuid: str
     anio: int
     mes: int
+    secuencia: int
     fecha_limite_cuota: date | None
     conciliado: bool
 
@@ -95,6 +96,7 @@ class PeriodoResponse(BaseModel):
             uuid=m.uuid,
             anio=m.anio,
             mes=m.mes,
+            secuencia=m.secuencia,
             fecha_limite_cuota=m.fecha_limite_cuota,
             conciliado=m.conciliado,
         )

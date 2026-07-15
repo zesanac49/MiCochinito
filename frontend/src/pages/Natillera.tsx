@@ -8,6 +8,7 @@ import {
   useConfigurar,
   useCrearNatillera,
   useNatillera,
+  useRegenerarPeriodos,
   useTransicionar,
 } from '@/hooks/natilleras'
 import { mensajeError } from '@/lib/api'
@@ -93,6 +94,7 @@ export function Natillera() {
   const detalle = useNatillera(nat)
   const configurar = useConfigurar(nat ?? '')
   const transicionar = useTransicionar(nat ?? '')
+  const regenerar = useRegenerarPeriodos(nat ?? '')
   const crear = useCrearNatillera()
 
   const [nueva, setNueva] = useState<NuevaNatillera>({
@@ -182,6 +184,28 @@ export function Natillera() {
               <Save size={16} /> Guardar configuración
             </Button>
           </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-text-secondary/10 pt-3">
+            <p className="max-w-md text-xs text-text-secondary">
+              Si cambiaste la <strong>periodicidad</strong>, pulsa aquí para generar los
+              sub-períodos que falten (p. ej. las 2ª quincenas). No borra ni afecta lo ya
+              cobrado.
+            </p>
+            <Button
+              cargando={regenerar.isPending}
+              onClick={() => {
+                if (confirm('¿Regenerar los períodos según la periodicidad configurada?'))
+                  regenerar.mutate(undefined, {
+                    onSuccess: (r) => alert(`Períodos creados: ${r.periodos_creados}`),
+                  })
+              }}
+            >
+              <StepForward size={16} /> Regenerar períodos
+            </Button>
+          </div>
+          {regenerar.isError && (
+            <p className="mt-2 text-sm text-danger">{mensajeError(regenerar.error)}</p>
+          )}
         </Card>
       )}
 

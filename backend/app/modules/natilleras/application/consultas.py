@@ -27,6 +27,7 @@ class DatosNatilleraOperacion:
     natillera_id: int
     valor_cuota: Dinero
     permite_aportes_extra: bool
+    cobros_por_mes: int  # cuota por período = valor_cuota ÷ cobros_por_mes (RF-301)
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,6 +81,7 @@ class ConsultaNatillera:
             natillera_id=natillera.id,
             valor_cuota=natillera.configuracion.valor_cuota,
             permite_aportes_extra=natillera.configuracion.permite_aportes_extra,
+            cobros_por_mes=natillera.configuracion.periodicidad_cuota.cobros_por_mes(),
         )
 
     def datos_para_prestamo(self, natillera_uuid: str, operacion: str) -> DatosPrestamo:

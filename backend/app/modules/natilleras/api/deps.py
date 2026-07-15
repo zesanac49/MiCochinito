@@ -14,6 +14,7 @@ from app.modules.contabilidad.infrastructure.repositorios import (
 from app.modules.natilleras.application.casos_uso import (
     ConfigurarNatillera,
     CrearNatillera,
+    RegenerarPeriodos,
     TransicionarEstado,
 )
 from app.modules.natilleras.infrastructure.repositorios import (
@@ -61,5 +62,16 @@ def uc_transicionar(
         UnidadDeTrabajoSQLAlchemy(session, bus),
         RepositorioNatillerasSQLAlchemy(session),
         FabricaAuditoriaSQLAlchemy(session),
+        GeneradorPeriodosSQLAlchemy(session),
+    )
+
+
+def uc_regenerar_periodos(
+    session: Session = Depends(obtener_session),
+    bus: BusDeEventos = Depends(obtener_bus),
+) -> RegenerarPeriodos:
+    return RegenerarPeriodos(
+        UnidadDeTrabajoSQLAlchemy(session, bus),
+        RepositorioNatillerasSQLAlchemy(session),
         GeneradorPeriodosSQLAlchemy(session),
     )

@@ -85,7 +85,8 @@ class ServicioCuotas:
                 raise PeriodoYaPagado(
                     "El período ya está pagado para este participante."
                 )
-            valor = participante.valor_cuota or datos.valor_cuota
+            mensual = participante.valor_cuota or datos.valor_cuota
+            valor = mensual.dividir_entre(datos.cobros_por_mes)
             leido = self._registrar_cuota(
                 participante.id, periodo_id, valor, autor_id
             )
@@ -141,7 +142,8 @@ class ServicioCuotas:
                         ItemLoteResultado(participante_uuid, periodo_uuid, "YA_PAGADO")
                     )
                     continue
-                valor = p.valor_cuota or datos.valor_cuota
+                mensual = p.valor_cuota or datos.valor_cuota
+                valor = mensual.dividir_entre(datos.cobros_por_mes)
                 leido = self._registrar_cuota(p.id, periodo_id, valor, autor_id)
                 total = total + valor
                 resultados.append(

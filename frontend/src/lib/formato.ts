@@ -22,3 +22,11 @@ const MESES = [
 export function nombrePeriodo(anio: number, mes: number): string {
   return `${MESES[mes - 1] ?? mes} ${anio}`
 }
+
+// Sufijo de sub-período según la periodicidad (quincenal/semanal). Mensual: vacío.
+export function sufijoPeriodicidad(secuencia: number, periodicidad?: string | null): string {
+  if (!periodicidad || periodicidad === 'MENSUAL') return ''
+  if (periodicidad === 'QUINCENAL') return ` · ${secuencia === 1 ? '1ª' : '2ª'} quincena`
+  if (periodicidad === 'SEMANAL') return ` · semana ${secuencia}`
+  return ` · ${secuencia}`
+}

@@ -20,6 +20,11 @@ class Periodicidad(str, Enum):
     QUINCENAL = "QUINCENAL"
     SEMANAL = "SEMANAL"
 
+    def cobros_por_mes(self) -> int:
+        """Cuántos cobros/períodos genera cada mes (RF-301): mensual=1,
+        quincenal=2, semanal=4."""
+        return {"MENSUAL": 1, "QUINCENAL": 2, "SEMANAL": 4}[self.value]
+
 
 class EstrategiaDistribucion(str, Enum):
     PARTES_IGUALES = "PARTES_IGUALES"

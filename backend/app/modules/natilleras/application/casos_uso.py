@@ -16,7 +16,7 @@ from app.modules.contabilidad.application.puertos import (
 )
 from app.modules.natilleras.application.puertos import RepositorioNatilleras
 from app.modules.natilleras.domain.configuracion import Configuracion
-from app.modules.natilleras.domain.estados import EstadoNatillera
+from app.modules.natilleras.domain.estados import EstadoNatillera, Operacion
 from app.modules.natilleras.domain.natillera import Natillera
 from app.shared.application.auditoria import FabricaAuditoria
 from app.shared.application.membresias import AsignadorMembresia
@@ -126,13 +126,14 @@ class TransicionarEstado:
             self._repo.guardar(natillera)
             self._uow.registrar(natillera)  # publica NatilleraTransicionada
             assert natillera.id is not None
-            # Al abrir, se generan los períodos del ciclo (S2-T02).
+            # Al abrir, se generan los períodos del ciclo según la periodicidad.
             if hacia is EstadoNatillera.ABIERTA and natillera.configuracion is not None:
                 self._periodos.generar(
                     natillera.id,
                     natillera.ciclo_inicio,
                     natillera.ciclo_fin,
                     natillera.configuracion.dia_limite_pago,
+                    natillera.configuracion.periodicidad_cuota.cobros_por_mes(),
                 )
             self._auditoria.para(natillera.id).registrar(
                 autor_id,
@@ -143,3 +144,36 @@ class TransicionarEstado:
             )
             self._uow.commit()
         return natillera
+
+
+class RegenerarPeriodos:
+    """Sincroniza los períodos del ciclo con la periodicidad configurada
+    (aditivo: crea los sub-períodos que falten; no borra ni toca lo ya cobrado)."""
+
+    def __init__(
+        self,
+        uow: UnidadDeTrabajo,
+        repo: RepositorioNatilleras,
+        generador_periodos: GeneradorPeriodos,
+    ) -> None:
+        self._uow = uow
+        self._repo = repo
+        self._periodos = generador_periodos
+
+    def ejecutar(self, uuid: str) -> int:
+        with self._uow:
+            natillera = self._repo.obtener_por_uuid(uuid)
+            if natillera is None or natillera.id is None:
+                raise NoEncontrado("Natillera inexistente.")
+            natillera.exigir_puede(Operacion.CONFIGURAR)  # bloquea si está liquidada
+            if natillera.configuracion is None:
+                raise NoEncontrado("La natillera aún no tiene configuración.")
+            creados = self._periodos.generar(
+                natillera.id,
+                natillera.ciclo_inicio,
+                natillera.ciclo_fin,
+                natillera.configuracion.dia_limite_pago,
+                natillera.configuracion.periodicidad_cuota.cobros_por_mes(),
+            )
+            self._uow.commit()
+        return creados

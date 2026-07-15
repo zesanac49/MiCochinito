@@ -69,6 +69,7 @@ class GeneradorPeriodos(Protocol):
         ciclo_inicio: date,
         ciclo_fin: date,
         dia_limite: int,
+        cobros_por_mes: int = 1,
     ) -> int: ...
 
 

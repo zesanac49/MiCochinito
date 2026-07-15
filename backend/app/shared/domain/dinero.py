@@ -126,6 +126,18 @@ class Dinero:
         """Escala el monto por una cantidad (p. ej. valor_numero × cantidad)."""
         return Dinero(self._monto * self._exigir_escalar(factor))
 
+    def dividir_entre(self, divisor: int) -> Dinero:
+        """Divide el monto entre una cantidad entera positiva (p. ej. cuota
+        mensual ÷ cobros por mes). Redondea a 2 decimales (RN cuota por período)."""
+        if isinstance(divisor, bool) or not isinstance(divisor, int):
+            raise ErrorMonetario(
+                "El divisor debe ser un entero.",
+                {"tipo_recibido": type(divisor).__name__},
+            )
+        if divisor <= 0:
+            raise ErrorMonetario("El divisor debe ser un entero positivo.")
+        return Dinero(self._monto / Decimal(divisor))
+
     def __mul__(self, factor: object) -> Dinero:
         return self.multiplicado_por(self._exigir_escalar(factor))
 

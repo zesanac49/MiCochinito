@@ -22,7 +22,7 @@ from app.modules.contabilidad.domain.conceptos import (
     TipoFondo,
 )
 from app.modules.contabilidad.domain.fondo import Fondo
-from app.modules.contabilidad.domain.periodos import calcular_periodos_mensuales
+from app.modules.contabilidad.domain.periodos import calcular_periodos
 from app.modules.contabilidad.infrastructure.modelos import (
     AsientoModel,
     FondoModel,
@@ -208,11 +208,12 @@ class RepositorioPeriodosSQLAlchemy:
         self._session = session
         self._natillera_id = natillera_id
 
-    def existe(self, anio: int, mes: int) -> bool:
+    def existe(self, anio: int, mes: int, secuencia: int = 1) -> bool:
         stmt = select(func.count()).select_from(PeriodoModel).where(
             PeriodoModel.natillera_id == self._natillera_id,
             PeriodoModel.anio == anio,
             PeriodoModel.mes == mes,
+            PeriodoModel.secuencia == secuencia,
         )
         return (self._session.scalar(stmt) or 0) > 0
 
@@ -220,7 +221,7 @@ class RepositorioPeriodosSQLAlchemy:
         stmt = (
             select(PeriodoModel)
             .where(PeriodoModel.natillera_id == self._natillera_id)
-            .order_by(PeriodoModel.anio, PeriodoModel.mes)
+            .order_by(PeriodoModel.anio, PeriodoModel.mes, PeriodoModel.secuencia)
         )
         return list(self._session.scalars(stmt).all())
 
@@ -238,26 +239,33 @@ class RepositorioPeriodosSQLAlchemy:
 
 
 class GeneradorPeriodosSQLAlchemy:
-    """Genera los períodos mensuales del ciclo (idempotente)."""
+    """Genera los sub-períodos del ciclo según la periodicidad (idempotente:
+    solo crea los que falten, identificados por (anio, mes, secuencia))."""
 
     def __init__(self, session: Session) -> None:
         self._session = session
 
     def generar(
-        self, natillera_id: int, ciclo_inicio: date, ciclo_fin: date, dia_limite: int
+        self,
+        natillera_id: int,
+        ciclo_inicio: date,
+        ciclo_fin: date,
+        dia_limite: int,
+        cobros_por_mes: int = 1,
     ) -> int:
         repo = RepositorioPeriodosSQLAlchemy(self._session, natillera_id)
         creados = 0
-        for anio, mes, fecha_limite in calcular_periodos_mensuales(
-            ciclo_inicio, ciclo_fin, dia_limite
+        for anio, mes, secuencia, fecha_limite in calcular_periodos(
+            ciclo_inicio, ciclo_fin, dia_limite, cobros_por_mes
         ):
-            if repo.existe(anio, mes):
+            if repo.existe(anio, mes, secuencia):
                 continue
             self._session.add(
                 PeriodoModel(
                     natillera_id=natillera_id,
                     anio=anio,
                     mes=mes,
+                    secuencia=secuencia,
                     fecha_limite_cuota=fecha_limite,
                     conciliado=False,
                 )

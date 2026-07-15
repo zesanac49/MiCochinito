@@ -69,6 +69,7 @@ export interface Periodo {
   uuid: string
   anio: number
   mes: number
+  secuencia: number
   fecha_limite_cuota: string | null
   conciliado: boolean
 }

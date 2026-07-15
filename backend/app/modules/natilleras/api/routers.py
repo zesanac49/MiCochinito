@@ -13,6 +13,7 @@ from app.modules.natilleras.api.deps import (
     obtener_repo,
     uc_configurar,
     uc_crear,
+    uc_regenerar_periodos,
     uc_transicionar,
 )
 from app.modules.natilleras.api.schemas import (
@@ -24,6 +25,7 @@ from app.modules.natilleras.api.schemas import (
 from app.modules.natilleras.application.casos_uso import (
     ConfigurarNatillera,
     CrearNatillera,
+    RegenerarPeriodos,
     TransicionarEstado,
 )
 from app.modules.natilleras.infrastructure.repositorios import (
@@ -93,3 +95,14 @@ def configurar(
     autor_id = principal.usuario_id or 0
     natillera = uc.ejecutar(natillera_uuid, datos.a_dominio(), autor_id)
     return NatilleraResponse.de_dominio(natillera)
+
+
+@router.post("/{natillera_uuid}/periodos/regenerar", response_model=dict[str, int])
+def regenerar_periodos(
+    natillera_uuid: str,
+    principal: Principal = Depends(_ADMIN_SUP),
+    uc: RegenerarPeriodos = Depends(uc_regenerar_periodos),
+) -> dict[str, int]:
+    """Sincroniza los períodos con la periodicidad configurada (aditivo)."""
+    creados = uc.ejecutar(natillera_uuid)
+    return {"periodos_creados": creados}

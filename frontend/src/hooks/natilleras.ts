@@ -63,6 +63,20 @@ export function useConfigurar(uuid: string) {
   })
 }
 
+export function useRegenerarPeriodos(uuid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () =>
+      (
+        await api.post<{ periodos_creados: number }>(
+          `/natilleras/${uuid}/periodos/regenerar`,
+          {},
+        )
+      ).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['periodos', uuid] }),
+  })
+}
+
 export function useTransicionar(uuid: string) {
   const qc = useQueryClient()
   return useMutation({
