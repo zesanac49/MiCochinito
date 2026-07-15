@@ -28,6 +28,7 @@ class ConfiguracionRequest(BaseModel):
     max_prestamos_activos: int = Field(ge=1, default=2)
     max_capital_vigente: str
     estrategia_distribucion: EstrategiaDistribucion
+    valor_mora: str = "0"
 
     @field_validator(
         "valor_cuota",
@@ -35,6 +36,7 @@ class ConfiguracionRequest(BaseModel):
         "tasa_interes_min",
         "tasa_interes_max",
         "max_capital_vigente",
+        "valor_mora",
     )
     @classmethod
     def _decimal_valido(cls, v: str) -> str:
@@ -56,6 +58,7 @@ class ConfiguracionRequest(BaseModel):
             max_prestamos_activos=self.max_prestamos_activos,
             max_capital_vigente=Dinero(self.max_capital_vigente),
             estrategia_distribucion=self.estrategia_distribucion,
+            valor_mora=Dinero(self.valor_mora),
         )
 
 
@@ -82,6 +85,7 @@ class ConfiguracionResponse(BaseModel):
     max_capital_vigente: str
     estrategia_distribucion: str
     estrategia_congelada: bool
+    valor_mora: str
 
 
 class NatilleraResponse(BaseModel):
@@ -108,6 +112,7 @@ class NatilleraResponse(BaseModel):
                 max_capital_vigente=cfg.max_capital_vigente.como_str(),
                 estrategia_distribucion=cfg.estrategia_distribucion.value,
                 estrategia_congelada=n.estrategia_congelada,
+                valor_mora=cfg.valor_mora.como_str(),
             )
             if cfg is not None
             else None

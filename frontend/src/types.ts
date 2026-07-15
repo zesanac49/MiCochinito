@@ -231,6 +231,7 @@ export interface CuentaParticipante {
     ahorros: string
     intereses_pendientes: string
     multas_pendientes: string
+    mora_pendiente: string
   }
   asientos: Asiento[]
 }

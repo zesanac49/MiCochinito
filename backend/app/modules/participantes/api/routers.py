@@ -17,7 +17,13 @@ from app.modules.contabilidad.domain.conceptos import Naturaleza, TipoFondo
 from app.modules.contabilidad.infrastructure.repositorios import (
     RepositorioLedgerSQLAlchemy,
 )
+from app.modules.cuotas.infrastructure.repositorios import (
+    RepositorioCuotasSQLAlchemy,
+)
 from app.modules.multas.infrastructure.modelos import MultaModel
+from app.modules.natilleras.infrastructure.repositorios import (
+    RepositorioNatillerasSQLAlchemy,
+)
 from app.modules.participantes.api.deps import (
     cambiar_estado_uc,
     editar_contacto_uc,
@@ -157,8 +163,19 @@ def cuenta(
         )
     )
     # Interés devengado no pagado de sus préstamos (INV-14, #10a).
+    hoy = date.today()
     intereses_pend = RepositorioPrestamosSQLAlchemy(session, nid).interes_pendiente_de(
-        participante.id, date.today()
+        participante.id, hoy
+    )
+    # Mora de cuotas de ahorro atrasadas: valor_mora × semanas de atraso (3B).
+    natillera = RepositorioNatillerasSQLAlchemy(session).obtener_por_uuid(natillera_uuid)
+    valor_mora = (
+        natillera.configuracion.valor_mora
+        if natillera is not None and natillera.configuracion is not None
+        else Dinero.cero()
+    )
+    mora_pend = RepositorioCuotasSQLAlchemy(session, nid).mora_pendiente_de(
+        participante.id, valor_mora, hoy
     )
     return CuentaResponse(
         participante_uuid=participante_uuid,
@@ -166,6 +183,7 @@ def cuenta(
             ahorros=ahorros.como_str(),
             intereses_pendientes=intereses_pend.como_str(),
             multas_pendientes=Dinero(multas_pend or 0).como_str(),
+            mora_pendiente=mora_pend.como_str(),
         ),
         asientos=[AsientoResponse.de_leido(a) for a in asientos],
     )

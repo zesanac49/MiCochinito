@@ -40,6 +40,7 @@ def _config_a_modelo(cfg: Configuracion, modelo: ConfiguracionModel) -> None:
     modelo.max_prestamos_activos = cfg.max_prestamos_activos
     modelo.max_capital_vigente = cfg.max_capital_vigente.monto
     modelo.estrategia_distribucion = cfg.estrategia_distribucion.value
+    modelo.valor_mora = cfg.valor_mora.monto
 
 
 def _modelo_a_config(modelo: ConfiguracionModel) -> Configuracion:
@@ -54,6 +55,7 @@ def _modelo_a_config(modelo: ConfiguracionModel) -> Configuracion:
         max_prestamos_activos=modelo.max_prestamos_activos,
         max_capital_vigente=Dinero(modelo.max_capital_vigente),
         estrategia_distribucion=EstrategiaDistribucion(modelo.estrategia_distribucion),
+        valor_mora=Dinero(modelo.valor_mora),
     )
 
 

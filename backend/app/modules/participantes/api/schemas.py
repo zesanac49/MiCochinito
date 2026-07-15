@@ -44,6 +44,7 @@ class SaldosResponse(BaseModel):
     ahorros: str
     intereses_pendientes: str = "0.00"
     multas_pendientes: str = "0.00"
+    mora_pendiente: str = "0.00"
 
 
 class ParticipanteResponse(BaseModel):

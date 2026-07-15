@@ -36,6 +36,7 @@ def _snapshot_config(cfg: Configuracion) -> dict[str, object]:
         "max_prestamos_activos": cfg.max_prestamos_activos,
         "max_capital_vigente": cfg.max_capital_vigente.como_str(),
         "estrategia_distribucion": cfg.estrategia_distribucion.value,
+        "valor_mora": cfg.valor_mora.como_str(),
     }
 
 

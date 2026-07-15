@@ -29,6 +29,7 @@ const CONFIG_DEFAULT: Configuracion = {
   max_prestamos_activos: 2,
   max_capital_vigente: '2000000.00',
   estrategia_distribucion: 'PROPORCIONAL_AHORRO',
+  valor_mora: '0',
 }
 
 const SIGUIENTE: Record<string, string | null> = {
@@ -74,6 +75,9 @@ function CamposConfig({
         onChange={(e) => set({ ...cfg, max_prestamos_activos: Number(e.target.value) })} />
       <Field label="Máx. capital vigente" inputMode="decimal" value={cfg.max_capital_vigente}
         onChange={(e) => set({ ...cfg, max_capital_vigente: e.target.value })} />
+      <Field label="Valor de mora (por semana de atraso)" inputMode="decimal" value={cfg.valor_mora}
+        onChange={(e) => set({ ...cfg, valor_mora: e.target.value })} />
+      <div /> {/* espaciador */}
       <div className="flex items-center justify-between rounded-nm-sm bg-surface px-4 py-2.5 shadow-nm-in sm:col-span-2">
         <div>
           <p className="text-sm font-medium">Permitir aportes extraordinarios</p>

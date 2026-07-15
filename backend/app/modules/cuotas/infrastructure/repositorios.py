@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.modules.contabilidad.infrastructure.modelos import PeriodoModel
 from app.modules.cuotas.application.dtos import CuotaCreada
 from app.modules.cuotas.domain.cuota import EstadoCuota
 from app.modules.cuotas.infrastructure.modelos import CuotaModel
+from app.shared.domain.dinero import Dinero
 
 
 class RepositorioCuotasSQLAlchemy:
@@ -46,3 +48,37 @@ class RepositorioCuotasSQLAlchemy:
         cuota = self._session.get(CuotaModel, cuota_id)
         if cuota is not None:
             cuota.asiento_id = asiento_id
+
+    def mora_pendiente_de(
+        self, participante_id: int, valor_mora: Dinero, hoy: date
+    ) -> Dinero:
+        """Mora acumulada del participante: por cada período vencido (fecha límite
+        pasada) y no pagado, `valor_mora × semanas de atraso` (3B)."""
+        if not valor_mora.es_positivo():
+            return Dinero.cero()
+        vencidos = self._session.execute(
+            select(PeriodoModel.id, PeriodoModel.fecha_limite_cuota).where(
+                PeriodoModel.natillera_id == self._natillera_id,
+                PeriodoModel.fecha_limite_cuota.is_not(None),
+                PeriodoModel.fecha_limite_cuota < hoy,
+            )
+        ).all()
+        if not vencidos:
+            return Dinero.cero()
+        pagados = set(
+            self._session.scalars(
+                select(CuotaModel.periodo_id).where(
+                    CuotaModel.natillera_id == self._natillera_id,
+                    CuotaModel.participante_id == participante_id,
+                    CuotaModel.estado == EstadoCuota.PAGADA.value,
+                )
+            ).all()
+        )
+        total = Dinero.cero()
+        for periodo_id, fecha_limite in vencidos:
+            if periodo_id in pagados or fecha_limite is None:
+                continue
+            semanas = (hoy - fecha_limite).days // 7
+            if semanas > 0:
+                total = total + valor_mora.multiplicado_por(semanas)
+        return total

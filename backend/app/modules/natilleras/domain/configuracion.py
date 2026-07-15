@@ -7,7 +7,7 @@ estrategia de distribución se congela al entrar a PENDIENTE_LIQUIDACION (RN-073
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import Enum
 
@@ -46,10 +46,14 @@ class Configuracion:
     max_prestamos_activos: int
     max_capital_vigente: Dinero
     estrategia_distribucion: EstrategiaDistribucion
+    # Mora fija por cada semana de atraso de una cuota de ahorro (0 = sin mora).
+    valor_mora: Dinero = field(default_factory=Dinero.cero)
 
     def __post_init__(self) -> None:
         if not self.valor_cuota.es_positivo():
             raise ErrorDeValidacionDeDominio("El valor de la cuota debe ser positivo.")
+        if self.valor_mora.es_negativo():
+            raise ErrorDeValidacionDeDominio("El valor de mora no puede ser negativo.")
         if not (1 <= self.dia_limite_pago <= 31):
             raise ErrorDeValidacionDeDominio("dia_limite_pago debe estar entre 1 y 31.")
         for nombre, tasa in (

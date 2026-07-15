@@ -57,7 +57,7 @@ export function ParticipanteDetalle() {
       </div>
 
       {/* Saldos */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
         <Card>
           <p className="text-[11px] uppercase tracking-[0.06em] text-text-secondary">Ahorros</p>
           <p className="tabular text-2xl font-bold text-accent">{formatoCOP(c?.saldos.ahorros ?? '0')}</p>
@@ -69,6 +69,10 @@ export function ParticipanteDetalle() {
         <Card>
           <p className="text-[11px] uppercase tracking-[0.06em] text-text-secondary">Multas pend.</p>
           <p className="tabular text-2xl font-bold">{formatoCOP(c?.saldos.multas_pendientes ?? '0')}</p>
+        </Card>
+        <Card>
+          <p className="text-[11px] uppercase tracking-[0.06em] text-text-secondary">Mora pend.</p>
+          <p className="tabular text-2xl font-bold text-warning">{formatoCOP(c?.saldos.mora_pendiente ?? '0')}</p>
         </Card>
       </div>
 

@@ -68,6 +68,8 @@ class ConfiguracionModel(ModeloTenant):
     max_capital_vigente: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
     estrategia_distribucion: Mapped[str] = mapped_column(String(30), nullable=False)
     estrategia_congelada: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Mora fija por semana de atraso de una cuota de ahorro (RF, 3B).
+    valor_mora: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False, default=0)
 
 
 class ConfiguracionHistorialModel(ModeloTenant):
